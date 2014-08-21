@@ -22,8 +22,11 @@ struct Ray
 
   friend Ray operator*(glm::mat4 const& t, Ray const& ray)
   {
-    auto tmp (ray);
-    return tmp.transform(t, false);
+    return Ray(
+      glm::vec3(t * glm::vec4(ray.o, 1.0f)),
+      glm::vec3(t * glm::vec4(ray.d, 0.0f)),
+      ray.depth
+    );
   }
 };
 
