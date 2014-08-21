@@ -1,6 +1,6 @@
 #include <thread>
-#include <renderer.hpp>
 #include <fensterchen.hpp>
+
 
 int main(int argc, char* argv[])
 {
@@ -8,7 +8,11 @@ int main(int argc, char* argv[])
   unsigned const height = 600;
   std::string const filename = "./checkerboard.ppm";
 
-  Renderer app(width, height, filename);
+  std::shared_ptr<StandardGridSampler> sampler = std::make_shared<StandardGridSampler>(width, height);
+
+  Scene scene;
+
+  Renderer app(width, height, filename, scene, sampler);
 
   std::thread thr([&app]() { app.render(); });
 

@@ -1,7 +1,7 @@
 #include "sampler.hpp"
 
 Sampler::Sampler()
- : samples_left_()
+ : samples_left_(true)
 {}
 
 bool

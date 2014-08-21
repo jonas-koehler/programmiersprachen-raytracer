@@ -9,12 +9,14 @@
 
 #include "renderer.hpp"
 
-Renderer::Renderer(unsigned w, unsigned h, std::string const& file)
+Renderer::Renderer(unsigned w, unsigned h, std::string const& file, Scene const& scene, std::shared_ptr<Sampler> const& sampler)
   : width_(w)
   , height_(h)
   , colorbuffer_(w*h, Color(0.0, 0.0, 0.0))
   , filename_(file)
   , ppm_(width_, height_)
+  , scene_(scene)
+  , sampler_(sampler)
 {}
 
 void Renderer::render()
@@ -24,7 +26,7 @@ void Renderer::render()
   while (sampler_->samples_left()) {
     auto sample = sampler_->next_sample();
     auto ray = cam.generate_ray(sample);
-    Pixel px((int) sample.x * width_, (int) sample.y * height_);
+    Pixel px(sample.x * width_, sample.y * height_);
     px.color = shade(ray, trace(ray));
     write(px);
   }
@@ -57,5 +59,9 @@ Renderer::trace(Ray const& ray) const
 Color
 Renderer::shade(Ray const& ray, Intersection const& isec) const
 {
-  return Color(0,0,0);
+  if (isec.hit) {
+
+  } else  {
+    return Color(0,0,0);
+  }
 }

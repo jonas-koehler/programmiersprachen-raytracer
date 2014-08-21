@@ -13,14 +13,14 @@ StandardGridSampler::StandardGridSampler(unsigned res_x, unsigned res_y)
 Sample
 StandardGridSampler::next_sample()
 {
-  float sx = current_x_ * res_x_inv_;
-  float sy = current_y_ * res_y_inv_;
+  float sx = ((float) current_x_) * res_x_inv_;
+  float sy = ((float) current_y_) * res_y_inv_;
 
   Sample smp = Sample(sx, sy);
 
-  if (current_x_ >= res_x_) {
+  if (++current_x_ >= res_x_) {
     current_x_ = 0;
-    if (current_y_ >= res_y_) {
+    if (++current_y_ >= res_y_) {
       current_y_ = 0;
       samples_left_ = false;
     }

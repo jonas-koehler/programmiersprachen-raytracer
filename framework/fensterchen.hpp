@@ -10,8 +10,11 @@
 #ifndef BUW_FENSTERCHEN_HPP
 #define BUW_FENSTERCHEN_HPP
 
+#define RAY_EPSILON 0.00001;
 #define MAX_RAY_RECURSION_DEPTH 5
 #define MAX_RAY_LENGTH 1000.0f
+
+#include <iostream>
 
 #include "color.hpp"
 
@@ -32,7 +35,8 @@
 #include "sampler.hpp"
 #include "standard_grid_sampler.hpp"
 
-#include "window.hpp"
+#include "renderer.hpp"
 
+#include "window.hpp"
 
 #endif // BUW_FENSTERCHEN_HPP
