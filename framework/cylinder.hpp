@@ -6,7 +6,7 @@
 class Cylinder : public Shape
 {
 public:
-  Cylinder(Material const& material);
+  Cylinder(std::shared_ptr<Material> const& material);
   virtual Intersection intersect(Ray const& ray) const override;
 };
 

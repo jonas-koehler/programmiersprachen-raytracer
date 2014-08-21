@@ -9,7 +9,14 @@
 struct Intersection
 {
 
-  Intersection(bool hit_something, float ray_t, glm::vec3 const& normal, Material const& material)
+  Intersection()
+   : hit()
+   , t(-1.0f)
+   , n()
+   , m()
+  {}
+
+  Intersection(bool hit_something, float ray_t, glm::vec3 const& normal, std::shared_ptr<Material> const& material)
    : hit(hit_something)
    , t(ray_t)
    , n(normal)
@@ -19,7 +26,7 @@ struct Intersection
   bool hit;
   float t;
   glm::vec3 n;
-  const Material & m;
+  std::shared_ptr<Material> m;
 };
 
 #endif // BUW_INTERSECTION_HPP

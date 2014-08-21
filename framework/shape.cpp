@@ -1,6 +1,6 @@
 #include "shape.hpp"
 
-Shape::Shape(Material const& material)
+Shape::Shape(std::shared_ptr<Material> const& material)
  : material_(material)
  , t_()
  , t_inv_()

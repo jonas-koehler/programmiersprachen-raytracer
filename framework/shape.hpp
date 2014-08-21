@@ -14,7 +14,7 @@
 class Shape
 {
 public:
-  Shape(Material const& material);
+  Shape(std::shared_ptr<Material> const& material);
 
   bool intersect_bbox(Ray const& ray) const;
   virtual Intersection intersect(Ray const& ray) const = 0;
@@ -26,7 +26,7 @@ public:
   void rotate(float deg, glm::vec3 const& axis);
 
 protected:
-  Material material_;
+  std::shared_ptr<Material> material_;
   glm::mat4 t_;
   glm::mat4 t_inv_;
   BoundingBox bbox_;

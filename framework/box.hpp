@@ -6,7 +6,7 @@
 class Box : public Shape
 {
 public:
-  Box(Material const& material);
+  Box(std::shared_ptr<Material> const& material);
   virtual Intersection intersect(Ray const& ray) const override;
 };
 

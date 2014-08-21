@@ -10,7 +10,7 @@
 class Composite : public Shape
 {
 public:
-  Composite(Material const& material);
+  Composite(std::shared_ptr<Material> const& material);
 
   virtual Intersection intersect(Ray const& ray) const override;
   void add_child(std::shared_ptr<Shape> const& child);

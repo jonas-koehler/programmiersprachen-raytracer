@@ -1,6 +1,6 @@
 #include "box.hpp"
 
-Box::Box(Material const& material)
+Box::Box(std::shared_ptr<Material> const& material)
  : Shape(material)
 {}
 
@@ -26,7 +26,7 @@ Box::intersect(Ray const& ray) const
   }
 
   if ( (tmin > tymax) || (tymin > tmax) )
-    return Intersection(false, -1.0f, glm::vec3(), material_);
+    return Intersection();
 
   if (tymin > tmin)
     tmin = tymin;
@@ -42,7 +42,7 @@ Box::intersect(Ray const& ray) const
   }
 
   if ( (tmin > tzmax) || (tzmin > tmax) )
-    return Intersection(false, -1.0f, glm::vec3(), material_);
+    return Intersection();
 
   if (tzmin > tmin)
     tmin = tzmin;
@@ -58,7 +58,7 @@ Box::intersect(Ray const& ray) const
   }
 
   if (t < 0.0f) {
-    return Intersection(false, -1.0f, glm::vec3(), material_);
+    return Intersection();
   }
 
   auto p = ray.point_at(t);

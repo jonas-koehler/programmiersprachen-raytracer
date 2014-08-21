@@ -6,7 +6,7 @@
 class Sphere : public Shape
 {
 public:
-  Sphere(Material const& material);
+  Sphere(std::shared_ptr<Material> const& material);
   virtual Intersection intersect(Ray const& ray) const override;
 };
 
