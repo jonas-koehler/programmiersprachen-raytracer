@@ -7,6 +7,14 @@
 #include <glm/glm.hpp>
 #include <cmath>
 
+#define GLM_SWIZZLE
+#define GLM_FORCE_RADIANS
+#include <glm/gtc/matrix_transform.hpp>
+
+#ifndef MAX_RAY_RECURSION_DEPTH
+  #define MAX_RAY_RECURSION_DEPTH 5
+#endif
+
 class Camera
 {
 public:

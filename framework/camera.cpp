@@ -1,7 +1,7 @@
 #include "camera.hpp"
 
 Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, float fovx_deg)
- : focal_length_(1.0f / (2.0f * std::tan(fovx / 360.0f * M_PI)))
+ : focal_length_(1.0f / (2.0f * std::tan(fovx_deg / 360.0f * M_PI)))
  , t_()
  , t_inv_()
 {
@@ -13,7 +13,7 @@ Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, 
   t_[1] = glm::vec4(v, 0.0f);
   t_[2] = glm::vec4(-n, 0.0f);
   t_[3] = glm::vec4(eye, 1.0f);
-  t_inv_ = glm::inverse(cameraToWorld_);
+  t_inv_ = glm::inverse(t_);
 }
 
 Ray
@@ -22,7 +22,7 @@ Camera::generate_ray(Sample const& smp) const
   glm::vec3 o(0.0f, 0.0f, -focal_length_);
   glm::vec3 d(glm::vec3(smp.x, smp.y, 0.0f));
 
-  Ray r = t_ * Ray(o, d);
+  Ray r = t_ * Ray(o, d, MAX_RAY_RECURSION_DEPTH);
   r.d = glm::normalize(r.d);
   return r;
 }
