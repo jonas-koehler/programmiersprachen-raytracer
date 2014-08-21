@@ -10,7 +10,29 @@
 #ifndef BUW_FENSTERCHEN_HPP
 #define BUW_FENSTERCHEN_HPP
 
+#define MAX_RAY_RECURSION_DEPTH 5
+#define MAX_RAY_LENGTH 1000.0f
+
 #include "color.hpp"
+
+#include "ray.hpp"
+#include "intersection.hpp"
+
+#include "material.hpp"
+
+#include "shape.hpp"
+#include "composite.hpp"
+#include "box.hpp"
+#include "sphere.hpp"
+#include "cylinder.hpp"
+#include "triangle.hpp"
+
+#include "sample.hpp"
+
+#include "sampler.hpp"
+#include "standard_grid_sampler.hpp"
+
 #include "window.hpp"
+
 
 #endif // BUW_FENSTERCHEN_HPP

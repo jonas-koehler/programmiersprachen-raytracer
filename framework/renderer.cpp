@@ -19,20 +19,16 @@ Renderer::Renderer(unsigned w, unsigned h, std::string const& file)
 
 void Renderer::render()
 {
-  const std::size_t checkersize = 20;
+  auto cam = scene_.camera();
 
-  for (unsigned y = 0; y < height_; ++y) {
-    for (unsigned x = 0; x < width_; ++x) {
-      Pixel p(x,y);
-      if ( ((x/checkersize)%2) != ((y/checkersize)%2)) {
-        p.color = Color(0.0, 1.0, float(x)/height_);
-      } else {
-        p.color = Color(1.0, 0.0, float(y)/width_);
-      }
-
-      write(p);
-    }
+  while (sampler_->samples_left()) {
+    auto sample = sampler_->next_sample();
+    auto ray = cam.generate_ray(sample);
+    Pixel px((int) sample.x * width_, (int) sample.y * height_);
+    px.color = shade(ray, trace(ray));
+    write(px);
   }
+
   ppm_.save(filename_);
 }
 
@@ -50,4 +46,16 @@ void Renderer::write(Pixel const& p)
   }
 
   ppm_.write(p);
+}
+
+Intersection
+Renderer::trace(Ray const& ray) const
+{
+  return scene_.root().intersect(ray);
+}
+
+Color
+Renderer::shade(Ray const& ray, Intersection const& isec) const
+{
+  return Color(0,0,0);
 }

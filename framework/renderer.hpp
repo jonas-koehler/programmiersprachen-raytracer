@@ -12,9 +12,16 @@
 
 #include "color.hpp"
 #include "pixel.hpp"
+#include "ray.hpp"
+#include "intersection.hpp"
+#include "scene.hpp"
+#include "sampler.hpp"
 #include "ppmwriter.hpp"
-#include <string>
+
 #include <glm/glm.hpp>
+#include <string>
+#include <vector>
+#include <memory>
 
 class Renderer
 {
@@ -30,10 +37,15 @@ public:
   }
 
 private:
+  Intersection trace(Ray const&) const;
+  Color shade(Ray const& ray, Intersection const& isec) const;
+
   unsigned width_;
   unsigned height_;
-  std::vector<Color> colorbuffer_;
+  std::shared_ptr<Sampler> sampler_;
+  Scene scene_;
   std::string filename_;
+  std::vector<Color> colorbuffer_;
   PpmWriter ppm_;
 };
 
