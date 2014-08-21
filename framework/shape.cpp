@@ -43,3 +43,9 @@ Shape::scale(glm::vec3 const& s)
   t_ = m * t_;
   t_inv_ = t_inv_ * m;
 }
+
+glm::vec3
+Shape::transform_normal(glm::vec3 const& n) const
+{
+  return glm::transpose(glm::mat3(t_inv_)) * n;
+}

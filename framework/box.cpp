@@ -5,9 +5,11 @@ Box::Box(std::shared_ptr<Material> const& material)
 {}
 
 Intersection
-Box::intersect(Ray const& ray) const
+Box::intersect(Ray const& r) const
 {
   float tmin, tmax, tymin , tymax, tzmin, tzmax;
+
+  auto ray = t_ * r;
 
   if (ray.d.x >= 0.0f) {
     tmin = (-1.0f - ray.o.x) / ray.d.x;
@@ -89,5 +91,5 @@ Box::intersect(Ray const& ray) const
     }
   }
 
-  return Intersection(true, t, normal, material_);
+  return Intersection(true, t, transform_normal(normal), material_);
 }

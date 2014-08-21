@@ -42,3 +42,24 @@ Composite::add_child(std::shared_ptr<Shape> const& new_child)
 
   children_.push_back(new_child);
 }
+
+void Composite::translate(glm::vec3 const& t)
+{
+  for (auto const& child: children_) {
+    child->translate(t);
+  }
+}
+
+void Composite::scale(glm::vec3 const& s)
+{
+  for (auto const& child: children_) {
+    child->scale(s);
+  }
+}
+
+void Composite::rotate(float deg, glm::vec3 const& axis)
+{
+  for (auto const& child: children_) {
+    child->rotate(deg, axis);
+  }
+}
