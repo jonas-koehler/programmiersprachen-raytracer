@@ -7,7 +7,7 @@ class Cylinder : public Shape
 {
 public:
   Cylinder(Material const& material);
-  virtual Intersection const& intersect(Ray const& ray) const override;
+  virtual Intersection intersect(Ray const& ray) const override;
 };
 
 #endif // BUW_CYLINDER_HPP

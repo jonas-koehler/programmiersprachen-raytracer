@@ -7,7 +7,7 @@ class Box : public Shape
 {
 public:
   Box(Material const& material);
-  virtual Intersection const& intersect(Ray const& ray) const override;
+  virtual Intersection intersect(Ray const& ray) const override;
 };
 
 #endif // BUW_BOX_HPP

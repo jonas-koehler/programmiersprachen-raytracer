@@ -7,21 +7,25 @@
 
 #include <glm/glm.hpp>
 
+#define GLM_SWIZZLE
+#define GLM_FORCE_RADIANS
+#include <glm/gtc/matrix_transform.hpp>
+
 class Shape
 {
 public:
   Shape(Material const& material);
 
   bool intersect_bbox(Ray const& ray) const;
-  virtual Intersection const& intersect(Ray const& ray) const = 0;
+  virtual Intersection intersect(Ray const& ray) const = 0;
 
-  BoundingBox bbox();
+  BoundingBox bbox() const;
 
   void translate(glm::vec3 const& t);
   void scale(glm::vec3 const& s);
   void rotate(float deg, glm::vec3 const& axis);
 
-private:
+protected:
   Material material_;
   glm::mat4 t_;
   glm::mat4 t_inv_;

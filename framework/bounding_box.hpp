@@ -14,7 +14,7 @@ struct BoundingBox {
     );
   }
 
-  bool intersect_ray(Ray const& ray) {
+  bool intersect(Ray const& ray) const {
     float tmin, tmax, tymin , tymax, tzmin, tzmax;
 
     if (ray.d.x >= 0) {

@@ -9,7 +9,7 @@ class Triangle : public Shape
 {
 public:
   Triangle(Material const& material, std::array<glm::vec3, 3> v);
-  virtual Intersection const& intersect(Ray const& ray) const override;
+  virtual Intersection intersect(Ray const& ray) const override;
 private:
   std::array<glm::vec3, 3> v_;
 };

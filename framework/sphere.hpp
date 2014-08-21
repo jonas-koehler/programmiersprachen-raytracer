@@ -7,7 +7,7 @@ class Sphere : public Shape
 {
 public:
   Sphere(Material const& material);
-  virtual Intersection const& intersect(Ray const& ray) const override;
+  virtual Intersection intersect(Ray const& ray) const override;
 };
 
 #endif // BUW_SPHERE_HPP
