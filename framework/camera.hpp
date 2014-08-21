@@ -5,6 +5,7 @@
 #include "sample.hpp"
 
 #include <glm/glm.hpp>
+#include <cmath>
 
 class Camera
 {
