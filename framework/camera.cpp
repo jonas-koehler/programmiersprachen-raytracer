@@ -16,10 +16,12 @@ Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, 
 Ray
 Camera::generate_ray(Sample const& smp) const
 {
-    return Ray(
-      t_ * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
-      glm::normalize(t_ * )
-    );
+  glm::vec3 o(0.0f, 0.0f, -focal_length_);
+  glm::vec3 d(glm::vec3(smp.x, smp.y, 0.0f));
+
+  Ray r = t_ * Ray(o, d);
+  r.d = glm::normalize(r.d);
+  return r;
 }
 
 void
@@ -34,14 +36,6 @@ void
 Camera::rotate(float rad, glm::vec3 const& axis)
 {
   auto m = glm::rotate(glm::mat4(), rad, axis);
-  t_ = m * t_;
-  t_inv_ = t_inv_ * m;
-}
-
-void
-Camera::scale(glm::vec3 const& s)
-{
-  auto m = glm::scale(glm::mat4(), s);
   t_ = m * t_;
   t_inv_ = t_inv_ * m;
 }

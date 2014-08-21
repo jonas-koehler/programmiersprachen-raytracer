@@ -14,7 +14,6 @@ public:
   Ray generate_ray(Sample const& smp) const;
 
   void translate(glm::vec3 const& t);
-  void scale(glm::vec3 const& s);
   void rotate(float deg, glm::vec3 const& axis);
 
 private:
