@@ -5,6 +5,14 @@
 
 struct Material
 {
+  Material()
+   : ka()
+   , kd()
+   , ks()
+   , m(200.0f)
+   , transparency(0.0f)
+   , n(1.0f)
+  {}
 
   Material(Color const& ambient, Color const& diffuse, Color const& specular,
            float specular_exponent, float opacity, float refraction_index)

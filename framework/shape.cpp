@@ -1,5 +1,12 @@
 #include "shape.hpp"
 
+Shape::Shape()
+ : material_()
+ , t_()
+ , t_inv_()
+ , bbox_(glm::vec3(-1), glm::vec3(1))
+{}
+
 Shape::Shape(std::shared_ptr<Material> const& material)
  : material_(material)
  , t_()

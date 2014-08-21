@@ -14,6 +14,7 @@
 class Shape
 {
 public:
+  Shape();
   Shape(std::shared_ptr<Material> const& material);
 
   bool intersect_bbox(Ray const& ray) const;

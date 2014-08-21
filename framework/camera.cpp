@@ -1,5 +1,11 @@
 #include "camera.hpp"
 
+Camera::Camera()
+ : focal_length_(1)
+ , t_()
+ , t_inv_()
+{}
+
 Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, float fovx_deg)
  : focal_length_(1.0f / (2.0f * std::tan(fovx_deg / 360.0f * M_PI)))
  , t_()

@@ -1,7 +1,7 @@
 #include "composite.hpp"
 
-Composite::Composite(std::shared_ptr<Material> const& material)
- : Shape(material)
+Composite::Composite()
+ : Shape()
  , children_()
 {}
 

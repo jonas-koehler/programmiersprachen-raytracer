@@ -18,6 +18,7 @@
 class Camera
 {
 public:
+  Camera();
   Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, float fovx_deg);
 
   Ray generate_ray(Sample const& smp) const;
