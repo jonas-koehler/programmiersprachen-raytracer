@@ -1,6 +1,14 @@
 #ifndef BUW_LIGHT_HPP
 #define BUW_LIGHT_HPP
 
+#include "color.hpp"
+
+#include <glm/glm.hpp>
+
+#define GLM_SWIZZLE
+#define GLM_FORCE_RADIANS
+#include <glm/gtc/matrix_transform.hpp>
+
 class Light
 {
 public:
