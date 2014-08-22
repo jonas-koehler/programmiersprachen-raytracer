@@ -53,7 +53,16 @@ void Renderer::write(Pixel const& p)
 Intersection
 Renderer::trace(Ray const& ray) const
 {
-  return scene_.root().intersect(ray);
+  auto isec = scene_.root().intersect(ray);
+
+  // avoid too short ray intersections
+  if (isec.t < RAY_EPSILON) {
+    auto d = ray.d;
+    auto o = ray.o + RAY_EPSILON * d;
+    Ray new_ray(o, d, ray.depth);
+    isec = scene_.root().intersect(ray);
+  }
+  return isec;
 }
 
 Color
@@ -61,7 +70,73 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
 {
   if (isec.hit) {
 
-  } else  {
-    return Color(0,0,0);
+    Color result(0.0f, 0.0f, 0.0f);
+    auto p = ray.point_at(isec.t);
+    auto lights = scene_.lights();
+    auto material = isec.m;
+    auto eye_dir = -ray.d;
+    auto normal = glm::faceforward(isec.n, ray.d, isec.n);
+
+    for (auto const& light: lights) {
+      auto light_dir = glm::normalize (light.position() - p);
+
+      Ray shadow_ray(p + RAY_EPSILON * light_dir, light_dir, ray.depth);
+      if (!trace(shadow_ray).hit) {
+
+        // diffuse light
+        auto cos_phi = glm::dot (light_dir, normal);
+        cos_phi = cos_phi > 0.0f ? cos_phi : 0.0f;
+        result += cos_phi * light.ld() * material->kd;
+
+        // specular highlights
+        auto reflect_light_dir = glm::reflect (light_dir, normal);
+        auto cos_beta = glm::dot (reflect_light_dir, eye_dir);
+        auto cos_beta_m = glm::pow (cos_beta, material->m);
+        result += cos_beta_m * light.ld() * material->ks;
+      }
+
+      // ambient light
+      result += light.la() * material->ka;
+    }
+
+    // reflection
+    Color reflected_color;
+
+    if (material->is_reflective()) {
+      auto d = glm::reflect (ray.d, normal);
+      auto o = p + d * RAY_EPSILON;
+
+      Ray reflected_ray(o, d, ray.depth-1);
+      reflected_color =  material->ks * shade(reflected_ray, trace(reflected_ray));
+      result += reflected_color;
+    }
+
+    // refraction
+    if (material->transparency > 0.0f) {
+      auto eta = material->n;
+
+      // inside the material?
+      if (glm::dot(ray.d, isec.n) < 0.0f) {
+        eta = 1.0f / eta;
+      }
+
+      auto d = glm::refract (ray.d, normal, eta);
+      auto o = p + d * RAY_EPSILON;
+
+      // inner reflection
+      if (d == glm::vec3(0.0f)) {
+        return reflected_color;
+      }
+
+      Ray refracted_ray(o, d, ray.depth-1);
+      result = material->transparency * result;
+      result += (1.0f - material->transparency) * shade(refracted_ray, trace(refracted_ray));
+    }
+
+    return result;
+
+  // background color
+  } else {
+    return Color(0.0f, 0.0f, 0.0f);
   }
 }

@@ -23,6 +23,10 @@
 #include <vector>
 #include <memory>
 
+#ifndef RAY_EPSILON
+  #define RAY_EPSILON 0.001f
+#endif //RAY_EPSILON
+
 class Renderer
 {
 public:
