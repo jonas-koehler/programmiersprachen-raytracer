@@ -6,6 +6,8 @@
 
 #include <memory>
 #include <vector>
+#include <algorithm>
+#include <glm/gtx/norm.hpp>
 
 class Composite : public Shape
 {
@@ -18,6 +20,10 @@ public:
   void translate(glm::vec3 const& t) override;
   void scale(glm::vec3 const& s) override;
   void rotate(float deg, glm::vec3 const& axis) override;
+
+  std::ostream& print(std::ostream& os) const override;
+
+  void optimize();
 
 private:
   std::vector<std::shared_ptr<Shape>> children_;

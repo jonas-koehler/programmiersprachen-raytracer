@@ -27,6 +27,19 @@ struct Intersection
   float t;
   glm::vec3 n;
   std::shared_ptr<Material> m;
+
+  friend std::ostream& operator<<(std::ostream& os, Intersection const& isec)
+  {
+    os << "(" << isec.hit << ")";
+    os << "(" << isec.t << ")";
+    os << "(" << isec.n.x << "," << isec.n.y << "," << isec.n.z << ")";
+    if (isec.m)
+      os << "(" << *isec.m << ")\n";
+    else
+      os << "(" << "null" << ")\n";
+    return os;
+  }
+
 };
 
 #endif // BUW_INTERSECTION_HPP

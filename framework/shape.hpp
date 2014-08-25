@@ -11,6 +11,8 @@
 #define GLM_FORCE_RADIANS
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <memory>
+
 class Shape
 {
 public:
@@ -26,12 +28,26 @@ public:
   virtual void scale(glm::vec3 const& s);
   virtual void rotate(float deg, glm::vec3 const& axis);
 
+  virtual std::ostream& print(std::ostream& os) const = 0;
+
+  friend std::ostream& operator<<(std::ostream& os, Shape const& shape)
+  {
+    return shape.print(os);
+  }
+
 protected:
   glm::vec3 transform_normal(glm::vec3 const& n) const;
 
   std::shared_ptr<Material> material_;
+
+  // object to world space and inverse
   glm::mat4 t_;
   glm::mat4 t_inv_;
+
+  // transposed transformations
+  glm::mat3 t_T_;
+  glm::mat3 t_inv_T_;
+
   BoundingBox bbox_;
 };
 

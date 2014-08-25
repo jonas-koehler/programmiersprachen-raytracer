@@ -17,8 +17,7 @@ Shape::Shape(std::shared_ptr<Material> const& material)
 bool
 Shape::intersect_bbox(Ray const& ray) const
 {
-  auto object_ray = t_ * ray;
-  return bbox_.intersect(object_ray);
+  return bbox_.intersect(t_inv_ * ray);
 }
 
 BoundingBox
@@ -31,28 +30,43 @@ void
 Shape::translate(glm::vec3 const& t)
 {
   auto m = glm::translate(glm::mat4(), t);
+  auto m_inv = glm::translate(glm::mat4(), -t);
+
   t_ = m * t_;
-  t_inv_ = t_inv_ * m;
+  t_inv_ = t_inv_ * m_inv;
+
+  t_T_ = glm::transpose(glm::mat3(t_));
+  t_inv_T_ = glm::transpose(glm::mat3(t_inv_));
 }
 
 void
 Shape::rotate(float rad, glm::vec3 const& axis)
 {
   auto m = glm::rotate(glm::mat4(), rad, axis);
+  auto m_inv = glm::rotate(glm::mat4(), -rad, axis);
+
   t_ = m * t_;
-  t_inv_ = t_inv_ * m;
+  t_inv_ = t_inv_ * m_inv;
+
+  t_T_ = glm::transpose(glm::mat3(t_));
+  t_inv_T_ = glm::transpose(glm::mat3(t_inv_));
 }
 
 void
 Shape::scale(glm::vec3 const& s)
 {
   auto m = glm::scale(glm::mat4(), s);
+  auto m_inv = glm::scale(glm::mat4(), glm::vec3(1.0f / s.x, 1.0f / s.y, 1.0f / s.z));
+
   t_ = m * t_;
-  t_inv_ = t_inv_ * m;
+  t_inv_ = t_inv_ * m_inv;
+
+  t_T_ = glm::transpose(glm::mat3(t_));
+  t_inv_T_ = glm::transpose(glm::mat3(t_inv_));
 }
 
 glm::vec3
 Shape::transform_normal(glm::vec3 const& n) const
 {
-  return glm::transpose(glm::mat3(t_inv_)) * n;
+  return t_T_ * n;
 }

@@ -9,49 +9,51 @@ Box::intersect(Ray const& r) const
 {
   float tmin, tmax, tymin , tymax, tzmin, tzmax;
 
-  auto ray = t_ * r;
+  auto ray = t_inv_ * r;
 
   if (ray.d.x >= 0.0f) {
-    tmin = (-1.0f - ray.o.x) / ray.d.x;
-    tmax = (1.0f - ray.o.x) / ray.d.x;
+    tmin = (-1.0f - ray.o.x) * ray.d_inv.x;
+    tmax = (1.0f - ray.o.x) * ray.d_inv.x;
   } else {
-    tmin = (1.0f - ray.o.x) / ray.d.x;
-    tmax = (-1.0f - ray.o.x) / ray.d.x;
+    tmin = (1.0f - ray.o.x) * ray.d_inv.x;
+    tmax = (-1.0f - ray.o.x) * ray.d_inv.x;
   }
 
   if (ray.d.y >= 0.0f) {
-    tymin = (-1.0f - ray.o.y) / ray.d.y;
-    tymax = (1.0f - ray.o.y) / ray.d.y;
+    tymin = (-1.0f - ray.o.y) * ray.d_inv.y;
+    tymax = (1.0f - ray.o.y) * ray.d_inv.y;
   } else {
-    tymin = (-1.0f - ray.o.y) / ray.d.y;
-    tymax = (1.0f - ray.o.y) / ray.d.y;
+    tymin = (1.0f - ray.o.y) * ray.d_inv.y;
+    tymax = (-1.0f - ray.o.y) * ray.d_inv.y;
   }
 
-  if ( (tmin > tymax) || (tymin > tmax) )
+  if ( (tmin > tymax) || (tymin > tmax) ) {
     return Intersection();
+  }
 
   if (tymin > tmin)
     tmin = tymin;
   if (tymax < tmax)
     tmax = tymax;
 
-  if (ray.d.y >= 0.0f) {
-    tymin = (-1.0f - ray.o.z) / ray.d.z;
-    tymax = (1.0f - ray.o.z) / ray.d.z;
+  if (ray.d.z >= 0.0f) {
+    tzmin = (-1.0f - ray.o.z) * ray.d_inv.z;
+    tzmax = (1.0f - ray.o.z) * ray.d_inv.z;
   } else {
-    tymin = (-1.0f - ray.o.z) / ray.d.z;
-    tymax = (1.0f - ray.o.z) / ray.d.z;
+    tzmin = (1.0f - ray.o.z) * ray.d_inv.z;
+    tzmax = (-1.0f - ray.o.z) * ray.d_inv.z;
   }
 
-  if ( (tmin > tzmax) || (tzmin > tmax) )
+  if ( (tmin > tzmax) || (tzmin > tmax) ) {
     return Intersection();
+  }
 
   if (tzmin > tmin)
     tmin = tzmin;
   if (tzmax < tmax)
     tmax = tzmax;
 
-  float t ;
+  float t;
 
   if (tmin < 0.0f) {
     t = tmax;
@@ -67,29 +69,31 @@ Box::intersect(Ray const& r) const
 
   glm::vec3 normal;
 
-  if (p.x >= p.y && p.x >= p.z) {
-    if (p.x >= 0.0f) {
+  glm::vec3 n2 = p * p;
+
+  if (n2.x >= n2.y && n2.x >= n2.z) {
+    if (p.x >= 0)
       normal = glm::vec3(1.0f, 0.0f, 0.0f);
-    } else {
+    else
       normal = glm::vec3(-1.0f, 0.0f, 0.0f);
-    }
-  }
-
-  if (p.y >= p.x && p.y >= p.z) {
-    if (p.y >= 0.0f) {
+  } else if (n2.y >= n2.x && n2.y >= n2.z) {
+    if (p.y >= 0)
       normal = glm::vec3(0.0f, 1.0f, 0.0f);
-    } else {
+    else
       normal = glm::vec3(0.0f, -1.0f, 0.0f);
-    }
-  }
-
-  if (p.z >= p.x && p.z >= p.y) {
-    if (p.z >= 0.0f) {
+  } else if (n2.z >= n2.x && n2.z >= n2.y) {
+    if (p.z >= 0)
       normal = glm::vec3(0.0f, 0.0f, 1.0f);
-    } else {
+    else
       normal = glm::vec3(0.0f, 0.0f, -1.0f);
-    }
   }
 
   return Intersection(true, t, transform_normal(normal), material_);
+}
+
+std::ostream&
+Box::print(std::ostream& os) const
+{
+  os << "a box";
+  return os;
 }

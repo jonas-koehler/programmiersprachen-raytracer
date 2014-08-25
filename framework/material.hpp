@@ -31,6 +31,17 @@ struct Material
   float transparency;
   float n;
 
+  friend std::ostream& operator<<(std::ostream& os, Material const& mat)
+  {
+    os << "(" << mat.ka << ")";
+    os << "(" << mat.kd << ")";
+    os << "(" << mat.ks << ")";
+    os << "(" << mat.m << ")";
+    os << "(" << mat.transparency << ")";
+    os << "(" << mat.n << ")\n";
+    return os;
+  }
+
   bool is_reflective () {
     return ks.r > 0 && ks.g > 0 && ks.b > 0;
   }

@@ -34,6 +34,7 @@
 
 #include "sampler.hpp"
 #include "standard_grid_sampler.hpp"
+#include "rotated_grid_sampler.hpp"
 
 #include "renderer.hpp"
 

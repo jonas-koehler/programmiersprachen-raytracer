@@ -50,6 +50,7 @@ private:
   Scene scene_;
   std::string filename_;
   std::vector<Color> colorbuffer_;
+  std::vector<unsigned> sample_num_;
   PpmWriter ppm_;
 };
 

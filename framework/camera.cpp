@@ -4,8 +4,8 @@ Camera::Camera()
  : focal_length_(1)
  , t_()
  , t_inv_()
-{}
-
+{
+}
 Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, float fovx_deg)
  : focal_length_(1.0f / (2.0f * std::tan(fovx_deg / 360.0f * M_PI)))
  , t_()
@@ -25,8 +25,8 @@ Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, 
 Ray
 Camera::generate_ray(Sample const& smp) const
 {
-  glm::vec3 o(0.0f, 0.0f, -focal_length_);
-  glm::vec3 d(glm::vec3(smp.x, smp.y, 0.0f));
+  glm::vec3 o(0.0f, 0.0f, 0.0f);
+  glm::vec3 d(glm::vec3(smp.x - 0.5f, smp.y - 0.5f, -focal_length_) - o);
 
   Ray r = t_ * Ray(o, d, MAX_RAY_RECURSION_DEPTH);
   r.d = glm::normalize(r.d);
