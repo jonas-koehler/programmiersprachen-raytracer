@@ -20,7 +20,7 @@ Composite::intersect(Ray const& r) const
         isec = current_isec;
         min_t = current_isec.t;
       }
-     }
+    }
   }
 
   if (isec.hit) {
@@ -37,6 +37,7 @@ Composite::add_child(std::shared_ptr<Shape> const& new_child)
 
   if (children_.empty()) {
     bbox_ = child_bbox;
+    transformed_bbox_ = t_ * bbox_;
   } else {
     bbox_ = bbox_ + child_bbox;
     transformed_bbox_ = t_ * bbox_;
@@ -59,9 +60,11 @@ Composite::optimize()
     float min_v = 10e6;
 
     for (auto it = second; it != children_.end(); ++it) {
-      auto second_bbox = t_inv_ * (*second)->bbox();
-      auto v = (first_bbox + second_bbox).volume();
+      auto second_bbox = t_inv_ * (*it)->bbox();
+      auto v = (first_bbox + second_bbox).size();
+      //std::cout << *(*it) << " + " << *(*(first)) << " = "<< v << std::endl;
       if (v < min_v) {
+
         min_v = v;
         second = it;
       }
@@ -83,6 +86,11 @@ Composite::optimize()
     second = std::find(children_.begin(), children_.end(), second_shape);
     if (second != children_.end())
       children_.erase(second);
+
+    /*for (auto const& child: children_) {
+      std::cout << *child;
+    }
+    std::cout << std::endl;*/
   }
 }
 

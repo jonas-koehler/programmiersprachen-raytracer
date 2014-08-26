@@ -12,7 +12,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #ifndef MAX_RAY_RECURSION_DEPTH
-  #define MAX_RAY_RECURSION_DEPTH 5
+  #define MAX_RAY_RECURSION_DEPTH 3
 #endif
 
 class Camera

@@ -18,6 +18,7 @@
 #include "sampler.hpp"
 #include "ppmwriter.hpp"
 #include "rotated_grid_sampler.hpp"
+#include "standard_grid_sampler.hpp"
 
 #include <glm/glm.hpp>
 #include <string>

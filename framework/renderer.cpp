@@ -38,6 +38,7 @@ Renderer::render_multithreaded() {
 
   for (unsigned i=0; i<total_threads; ++i) {
     auto sampler = std::make_shared<RotatedGridSampler>(2*width_, 2*height_ * total_threads_inv, 29.5f);
+    //auto sampler = std::make_shared<StandardGridSampler>(2*width_, 2*height_ * total_threads_inv);
 
     auto ymin = i * total_threads_inv;
     auto ymax = (i+1) * total_threads_inv;

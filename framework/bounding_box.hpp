@@ -12,6 +12,11 @@ struct BoundingBox {
     return d.x * d.y * d.z;
   }
 
+  float size() const {
+    auto d = pmax - pmin;
+    return glm::dot(d, d);
+  }
+
   friend BoundingBox operator+(BoundingBox const& a, BoundingBox const& b) {
     BoundingBox tmp(a);
     for (unsigned i=0; i<3; ++i) {
