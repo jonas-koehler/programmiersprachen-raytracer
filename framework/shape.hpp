@@ -49,6 +49,7 @@ protected:
   glm::mat3 t_inv_T_;
 
   BoundingBox bbox_;
+  BoundingBox transformed_bbox_;
 };
 
 #endif // BUW_SHAPE_HPP

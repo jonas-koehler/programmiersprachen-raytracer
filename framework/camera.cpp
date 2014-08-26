@@ -26,7 +26,7 @@ Ray
 Camera::generate_ray(Sample const& smp) const
 {
   glm::vec3 o(0.0f, 0.0f, 0.0f);
-  glm::vec3 d(glm::vec3(smp.x - 0.5f, smp.y - 0.5f, -focal_length_) - o);
+  glm::vec3 d(glm::vec3(smp.x - 0.5, smp.y - 0.5, -focal_length_) - o);
 
   Ray r = t_ * Ray(o, d, MAX_RAY_RECURSION_DEPTH);
   r.d = glm::normalize(r.d);

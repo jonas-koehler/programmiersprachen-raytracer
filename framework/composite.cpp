@@ -36,9 +36,10 @@ Composite::add_child(std::shared_ptr<Shape> const& new_child)
   auto child_bbox = t_inv_ * new_child->bbox();
 
   if (children_.empty()) {
-    bbox_ = t_inv_ * new_child->bbox();
+    bbox_ = child_bbox;
   } else {
     bbox_ = bbox_ + child_bbox;
+    transformed_bbox_ = t_ * bbox_;
   }
 
   children_.push_back(new_child);

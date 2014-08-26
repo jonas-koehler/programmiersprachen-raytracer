@@ -15,8 +15,8 @@ struct BoundingBox {
   friend BoundingBox operator+(BoundingBox const& a, BoundingBox const& b) {
     BoundingBox tmp(a);
     for (unsigned i=0; i<3; ++i) {
-      tmp.pmin[i] = glm::min(a.pmin[i], b.pmin[i]);
-      tmp.pmax[i] = glm::max(a.pmax[i], b.pmax[i]);
+      tmp.pmin[i] = glm::min(glm::min(glm::min(a.pmin[i], b.pmin[i]), a.pmax[i]), b.pmax[i]);
+      tmp.pmax[i] = glm::max(glm::max(glm::max(a.pmax[i], b.pmax[i]), a.pmin[i]), b.pmin[i]);
     }
     return tmp;
   }

@@ -9,7 +9,8 @@
 
 #include "renderer.hpp"
 
-Renderer::Renderer(unsigned w, unsigned h, std::string const& file, Scene const& scene, std::shared_ptr<Sampler> const& sampler)
+Renderer::Renderer(unsigned w, unsigned h, std::string const& file,
+                   Scene const& scene, std::shared_ptr<Sampler> const& sampler, bool multithreading)
   : width_(w)
   , height_(h)
   , colorbuffer_(w*h, Color(0.0, 0.0, 0.0))
@@ -18,11 +19,62 @@ Renderer::Renderer(unsigned w, unsigned h, std::string const& file, Scene const&
   , ppm_(width_, height_)
   , scene_(scene)
   , sampler_(sampler)
+  , multithreading_(multithreading)
 {}
 
-void Renderer::render()
-{
+void
+Renderer::render_multithreaded() {
   auto cam = scene_.camera();
+
+  int total_threads = 200;
+  float total_threads_inv = 1.0f / ((float) total_threads);
+
+  auto samples_per_thread = sampler_->total_samples() * total_threads_inv;
+
+  std::mutex mutex;
+  std::vector<std::thread> threads;
+
+  auto begin = std::chrono::high_resolution_clock::now();
+
+  for (unsigned i=0; i<total_threads; ++i) {
+    auto sampler = std::make_shared<RotatedGridSampler>(2*width_, 2*height_ * total_threads_inv, 29.5f);
+
+    auto ymin = i * total_threads_inv;
+    auto ymax = (i+1) * total_threads_inv;
+
+    sampler->restrict(0,ymin,1,ymax);
+
+    std::thread t([this, &cam, &mutex, sampler](){
+      while (sampler->samples_left()) {
+        //mutex.lock();
+        auto sample = sampler->next_sample();
+        //mutex.unlock();
+        auto ray = cam.generate_ray(sample);
+        Pixel px(sample.x * width_, sample.y * height_);
+        px.color = shade(ray, trace(ray));
+        write(px);
+      }
+    });
+    threads.push_back(std::move(t));
+  }
+
+  for (auto & t: threads) {
+    t.join();
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
+
+  std::cout << "rendered " << total_threads * samples_per_thread << " samples in " << duration << "ms" << std::endl;
+
+  ppm_.save(filename_);
+}
+
+void
+Renderer::render_singlethreaded() {
+  auto cam = scene_.camera();
+
+  auto begin = std::chrono::high_resolution_clock::now();
 
   while (sampler_->samples_left()) {
     auto sample = sampler_->next_sample();
@@ -32,10 +84,26 @@ void Renderer::render()
     write(px);
   }
 
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
+
+  std::cout << "rendered " << sampler_->total_samples() << " samples in " << duration << "ms" << std::endl;
+
   ppm_.save(filename_);
 }
 
-void Renderer::write(Pixel const& p)
+void
+Renderer::render()
+{
+  if (multithreading_) {
+    render_multithreaded();
+  } else {
+    render_singlethreaded();
+  }
+}
+
+void
+Renderer::write(Pixel const& p)
 {
   // flip pixels, because of opengl glDrawPixels
   size_t buf_pos = (width_*p.y + p.x);
@@ -93,7 +161,7 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         // diffuse light
         auto cos_phi = glm::dot (light_dir, normal);
         cos_phi = cos_phi > 0.0f ? cos_phi : 0.0f;
-        result += cos_phi * light.ld() * material->kd;
+        result += cos_phi * (light.ld() * material->kd);
 
         // specular highlights
         auto reflect_light_dir = glm::reflect (light_dir, normal);
@@ -103,7 +171,7 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
       }
 
       // ambient light
-      //result += light.la() * material->ka;
+      result += light.la() * material->ka;
     }
 
     if (ray.depth > 0) {
@@ -138,8 +206,8 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         }
 
         Ray refracted_ray(o, d, ray.depth-1);
-        //result = material->transparency * result;
-        //result += (1.0f - material->transparency) * shade(refracted_ray, trace(refracted_ray));
+        result = material->transparency * result;
+        result += (1.0f - material->transparency) * shade(refracted_ray, trace(refracted_ray));
       }
     }
 

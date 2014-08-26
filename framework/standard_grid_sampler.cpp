@@ -8,7 +8,9 @@ StandardGridSampler::StandardGridSampler(unsigned res_x, unsigned res_y)
  , res_y_(res_y)
  , res_x_inv_(1.0f / ((float) res_x))
  , res_y_inv_(1.0f / ((float) res_y))
- {}
+ {
+   total_samples_ = res_x * res_y;
+ }
 
 Sample
 StandardGridSampler::next_sample()
@@ -25,6 +27,9 @@ StandardGridSampler::next_sample()
       samples_left_ = false;
     }
   }
+
+  smp.x = smp.x * (max_x_ - min_x_) + min_x_;
+  smp.y = smp.y * (max_y_ - min_y_) + min_y_;
 
   return smp;
 }

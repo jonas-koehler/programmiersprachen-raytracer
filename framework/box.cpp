@@ -94,6 +94,6 @@ Box::intersect(Ray const& r) const
 std::ostream&
 Box::print(std::ostream& os) const
 {
-  os << "a box";
+  os << "box";
   return os;
 }

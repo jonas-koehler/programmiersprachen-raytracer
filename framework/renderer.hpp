@@ -17,11 +17,14 @@
 #include "scene.hpp"
 #include "sampler.hpp"
 #include "ppmwriter.hpp"
+#include "rotated_grid_sampler.hpp"
 
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
 #include <memory>
+#include <mutex>
+#include <thread>
 
 #ifndef RAY_EPSILON
   #define RAY_EPSILON 0.001f
@@ -30,9 +33,10 @@
 class Renderer
 {
 public:
-  Renderer(unsigned w, unsigned h, std::string const& file, Scene const& scene, std::shared_ptr<Sampler> const& sampler);
+  Renderer(unsigned w, unsigned h, std::string const& file, Scene const& scene, std::shared_ptr<Sampler> const& sampler, bool multithreading);
 
   void render();
+
   void write(Pixel const& p);
 
   inline std::vector<Color> const& colorbuffer() const
@@ -41,6 +45,9 @@ public:
   }
 
 private:
+  void render_multithreaded();
+  void render_singlethreaded();
+
   Intersection trace(Ray const&) const;
   Color shade(Ray const& ray, Intersection const& isec) const;
 
@@ -52,6 +59,7 @@ private:
   std::vector<Color> colorbuffer_;
   std::vector<unsigned> sample_num_;
   PpmWriter ppm_;
+  bool multithreading_;
 };
 
 #endif // #ifndef BUW_RENDERER_HPP
