@@ -10,7 +10,7 @@
 #include "renderer.hpp"
 
 Renderer::Renderer(unsigned w, unsigned h, std::string const& file,
-                   Scene const& scene, std::shared_ptr<Sampler> const& sampler, bool multithreading)
+                   Scene const& scene, unsigned char options)
   : width_(w)
   , height_(h)
   , colorbuffer_(w*h, Color(0.0, 0.0, 0.0))
@@ -18,89 +18,74 @@ Renderer::Renderer(unsigned w, unsigned h, std::string const& file,
   , filename_(file)
   , ppm_(width_, height_)
   , scene_(scene)
-  , sampler_(sampler)
-  , multithreading_(multithreading)
-{}
+  , render_callbacks_()
+{
 
-void
-Renderer::render_multithreaded() {
-  auto cam = scene_.camera();
+  unsigned samples_per_pixels_sqrt = 1;
 
-  int total_threads = 200;
-  float total_threads_inv = 1.0f / ((float) total_threads);
+  // super sampling active?
+  if (options & Option::SuperSampling4x) {
+    samples_per_pixels_sqrt = 2;
+  } else if (options & Option::SuperSampling16x) {
+    samples_per_pixels_sqrt = 4;
+  }
 
-  auto samples_per_thread = sampler_->total_samples() * total_threads_inv;
+  // multithreading active?
+  bool multithreading = (options & Option::MultiThreading) && !(options & Option::SingleThreading);
 
-  std::mutex mutex;
-  std::vector<std::thread> threads;
+  // RGSS or grid sampling?
+  bool rgss = (options & Option::RGSS) && !(options & Option::GridSampling);
 
-  auto begin = std::chrono::high_resolution_clock::now();
+
+  unsigned total_threads = (multithreading) ? 200 : 1;
+  float total_threads_inv = 1.0f / ((double) total_threads);
 
   for (unsigned i=0; i<total_threads; ++i) {
-    auto sampler = std::make_shared<RotatedGridSampler>(2*width_, 2*height_ * total_threads_inv, 29.5f);
-    //auto sampler = std::make_shared<StandardGridSampler>(2*width_, 2*height_ * total_threads_inv);
+
+    std::shared_ptr<Sampler> sampler;
+
+    if (rgss) {
+      sampler = std::make_shared<RotatedGridSampler>(
+        samples_per_pixels_sqrt * width_,
+        std::ceil(samples_per_pixels_sqrt * height_ * total_threads_inv),
+        RGSS_ANGLE
+      );
+    } else {
+      sampler = std::make_shared<StandardGridSampler>(
+        samples_per_pixels_sqrt * width_,
+        std::ceil(samples_per_pixels_sqrt * height_ * total_threads_inv)
+      );
+    }
 
     auto ymin = i * total_threads_inv;
-    auto ymax = (i+1) * total_threads_inv;
+    auto ymax = (i + 1) * total_threads_inv;
+    sampler->restrict (0, ymin, 1, ymax);
 
-    sampler->restrict(0,ymin,1,ymax);
-
-    std::thread t([this, &cam, &mutex, sampler](){
-      while (sampler->samples_left()) {
-        //mutex.lock();
-        auto sample = sampler->next_sample();
-        //mutex.unlock();
-        auto ray = cam.generate_ray(sample);
-        Pixel px(sample.x * width_, sample.y * height_);
-        px.color = shade(ray, trace(ray));
-        write(px);
-      }
-    });
-    threads.push_back(std::move(t));
+    render_callbacks_.push_back(RenderCallback(*this, sampler));
   }
-
-  for (auto & t: threads) {
-    t.join();
-  }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
-
-  std::cout << "rendered " << total_threads * samples_per_thread << " samples in " << duration << "ms" << std::endl;
-
-  ppm_.save(filename_);
 }
 
-void
-Renderer::render_singlethreaded() {
-  auto cam = scene_.camera();
-
-  auto begin = std::chrono::high_resolution_clock::now();
-
-  while (sampler_->samples_left()) {
-    auto sample = sampler_->next_sample();
-    auto ray = cam.generate_ray(sample);
-    Pixel px(sample.x * width_, sample.y * height_);
-    px.color = shade(ray, trace(ray));
-    write(px);
-  }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
-
-  std::cout << "rendered " << sampler_->total_samples() << " samples in " << duration << "ms" << std::endl;
-
-  ppm_.save(filename_);
-}
-
-void
+int
 Renderer::render()
 {
-  if (multithreading_) {
-    render_multithreaded();
-  } else {
-    render_singlethreaded();
+  auto begin = std::chrono::high_resolution_clock::now();
+
+  std::vector<std::thread> threads;
+  for (auto const& cb: render_callbacks_) {
+    threads.push_back(std::thread(cb));
   }
+  for (auto & t: threads) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+
+  auto end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
+
+  ppm_.save(filename_);
+
+  return duration;
 }
 
 void
@@ -149,7 +134,7 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
     auto lights = scene_.lights();
     auto material = isec.m;
     auto eye_dir = -ray.d;
-    auto normal = glm::faceforward(isec.n, ray.d, isec.n);
+    auto normal = isec.n; //glm::faceforward(isec.n, ray.d, isec.n);
 
     for (auto const& light: lights) {
       auto light_dir = glm::normalize (light.position() - p);
@@ -199,6 +184,8 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         // inside the material?
         if (glm::dot(ray.d, isec.n) < 0.0f) {
           eta = 1.0f / eta;
+        } else {
+          normal *= -1;
         }
 
         auto d = glm::refract (ray.d, normal, eta);
@@ -234,8 +221,8 @@ Renderer::shadow(Ray & ray) const
       ray.o = ray.point_at(isec.t) + RAY_EPSILON * ray.d;
 
       auto normal = glm::faceforward(isec.n, ray.d, isec.n);
-      auto cos_phi = glm::dot(normal, -ray.d);
-      cos_phi = cos_phi >= 0.0f ? cos_phi : 0.0f;
+      auto cos_phi = glm::dot(normal, ray.d);
+      //cos_phi = cos_phi >= 0.0f ? cos_phi : 0.0f;
 
       auto result = Color(1) - material->kd;;
       result *= material->transparency;

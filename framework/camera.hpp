@@ -27,7 +27,6 @@ public:
   void rotate(float deg, glm::vec3 const& axis);
 
 private:
-  std::string name_;
   float focal_length_;
   glm::mat4 world_transform_;
   glm::mat4 world_transform_inv_;

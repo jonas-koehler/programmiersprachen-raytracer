@@ -205,24 +205,29 @@ int main(int argc, char* argv[])
   light.translate(glm::vec3(0, 200, 100));
 
   Camera camera(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 60.0f);
-  // Camera camera;
-  camera.rotate(-0.0, glm::vec3(1, 0,0));
-  camera.translate(glm::vec3(0, 1.0f, 25.0f));
-
-
+  camera.rotate(0.3, glm::vec3(1, 0,0));
+  camera.translate(glm::vec3(0, -3.0f, 25.0f));
 
   scene.camera(camera);
   scene.add_light(light);
 
-  Renderer app(width, height, filename, scene, sampler, multithreading);
+  unsigned char options = Renderer::Option::MultiThreading | Renderer::Option::SuperSampling4x;
+  Renderer app(width, height, filename, scene, options);
 
-  std::thread thr([&app]() { app.render(); });
+  unsigned int render_time = 0;
+  bool finished = false;
+  std::thread thr([&app, &render_time, &finished]() { render_time = app.render(); finished = true;});
 
   Window win(glm::ivec2(width,height));
 
   while (!win.shouldClose()) {
     if (win.isKeyPressed(GLFW_KEY_ESCAPE)) {
       win.stop();
+    }
+
+    if (finished) {
+      std::cout << "rendered in " << render_time << "ms" << std::endl;
+      finished = false;
     }
 
     glDrawPixels( width, height, GL_RGB, GL_FLOAT
