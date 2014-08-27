@@ -36,20 +36,22 @@ public:
   }
 
 protected:
-  glm::vec3 transform_normal(glm::vec3 const& n) const;
+  glm::vec3 world_normal(glm::vec3 const& n) const;
+
+  Ray object_ray(Ray const& r) const;
 
   std::shared_ptr<Material> material_;
 
   // object to world space and inverse
-  glm::mat4 t_;
-  glm::mat4 t_inv_;
+  glm::mat4 world_transform_;
+  glm::mat4 world_transform_inv_;
 
   // transposed transformations
-  glm::mat3 t_T_;
-  glm::mat3 t_inv_T_;
+  glm::mat3 world_transform_T_;
+  glm::mat3 world_transform_inv_T_;
 
   BoundingBox bbox_;
-  BoundingBox transformed_bbox_;
+  BoundingBox world_bbox_;
 };
 
 #endif // BUW_SHAPE_HPP

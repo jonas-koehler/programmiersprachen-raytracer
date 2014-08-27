@@ -22,6 +22,10 @@ struct Color
   float g;
   float b;
 
+  bool is_black() {
+    return r==0 && g==0 && b==0;
+  }
+
   friend std::ostream& operator<<(std::ostream& os, Color const& c)
   {
     os << "(" << c.r << "," << c.g << "," << c.b << ")\n";

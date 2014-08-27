@@ -29,8 +29,8 @@ public:
 private:
   std::string name_;
   float focal_length_;
-  glm::mat4 t_;
-  glm::mat4 t_inv_;
+  glm::mat4 world_transform_;
+  glm::mat4 world_transform_inv_;
 };
 
 #endif // BUW_CAMERA_HPP

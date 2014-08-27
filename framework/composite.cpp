@@ -11,7 +11,7 @@ Composite::intersect(Ray const& r) const
   float min_t = 9999.0f;
   Intersection isec;
 
-  auto ray = t_inv_ * r;
+  auto ray = object_ray(r);
 
   for (auto const& child: children_) {
      if (child->intersect_bbox(ray)) {
@@ -24,7 +24,7 @@ Composite::intersect(Ray const& r) const
   }
 
   if (isec.hit) {
-    isec.n = transform_normal(isec.n);
+    isec.n = world_normal(isec.n);
   }
 
   return isec;
@@ -33,14 +33,14 @@ Composite::intersect(Ray const& r) const
 void
 Composite::add_child(std::shared_ptr<Shape> const& new_child)
 {
-  auto child_bbox = t_inv_ * new_child->bbox();
+  auto child_bbox = world_transform_inv_ * new_child->bbox();
 
   if (children_.empty()) {
     bbox_ = child_bbox;
-    transformed_bbox_ = t_ * bbox_;
+    world_bbox_ = world_transform_ * bbox_;
   } else {
     bbox_ = bbox_ + child_bbox;
-    transformed_bbox_ = t_ * bbox_;
+    world_bbox_ = world_transform_ * bbox_;
   }
 
   children_.push_back(new_child);
@@ -54,17 +54,17 @@ Composite::optimize()
   while (children_.size() > 2) {
     auto first = children_.begin();
 
-    auto first_bbox = t_inv_ * (*first)->bbox();
+    auto first_bbox = world_transform_inv_ * (*first)->bbox();
 
     auto second = first + 1;
     float min_v = 10e6;
 
     for (auto it = second; it != children_.end(); ++it) {
-      auto second_bbox = t_inv_ * (*it)->bbox();
-      auto v = (first_bbox + second_bbox).size();
-      //std::cout << *(*it) << " + " << *(*(first)) << " = "<< v << std::endl;
-      if (v < min_v) {
 
+      auto second_bbox = world_transform_inv_ * (*it)->bbox();
+      auto v = (first_bbox + second_bbox).size();
+
+      if (v < min_v) {
         min_v = v;
         second = it;
       }
@@ -86,11 +86,6 @@ Composite::optimize()
     second = std::find(children_.begin(), children_.end(), second_shape);
     if (second != children_.end())
       children_.erase(second);
-
-    /*for (auto const& child: children_) {
-      std::cout << *child;
-    }
-    std::cout << std::endl;*/
   }
 }
 
@@ -98,27 +93,18 @@ void
 Composite::translate(glm::vec3 const& t)
 {
   Shape::translate(t);
-  for (auto const& child: children_) {
-    //child->translate(t);
-  }
 }
 
 void
 Composite::scale(glm::vec3 const& s)
 {
   Shape::scale(s);
-  for (auto const& child: children_) {
-    //child->scale(s);
-  }
 }
 
 void
 Composite::rotate(float deg, glm::vec3 const& axis)
 {
   Shape::rotate(deg, axis);
-  for (auto const& child: children_) {
-    //child->rotate(deg, axis);
-  }
 }
 
 std::ostream&

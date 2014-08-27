@@ -7,7 +7,7 @@ Sphere::Sphere(std::shared_ptr<Material> const& material)
 Intersection
 Sphere::intersect(Ray const& r) const
 {
-  auto ray = t_inv_ * r;
+  auto ray = object_ray(r);
 
   // solve the square eq
   double a = glm::dot(ray.d, ray.d);
@@ -48,7 +48,7 @@ Sphere::intersect(Ray const& r) const
 
   glm::vec3 normal = ray.point_at(t);
 
-  return Intersection(true, t, transform_normal(normal), material_);
+  return Intersection(true, t, world_normal(normal), material_);
 }
 
 std::ostream&

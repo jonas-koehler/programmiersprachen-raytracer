@@ -19,25 +19,25 @@ int main(int argc, char* argv[])
     Color(0.6f, 0.3f, 0.2f),
     Color(0.1f),
     200.0f,
-    0.0f,
+    1.0f,
     1.0f
   );
 
   auto yellow = std::make_shared<Material>(
     Color(1.0f),
     Color(1.0f, 0.8f, 0.0f),
-    Color(0.2f),
+    Color(0.3f),
     200.0f,
-    0.0f,
+    1.0f,
     1.0f
   );
 
   auto water = std::make_shared<Material>(
+    Color(1.0f),
+    Color(0.0f, 0.8f, 1.0f),
     Color(0.0f),
-    Color(0.2f, 0.7f, 0.8f),
-    Color(0.5f),
     200.0f,
-    0.5,
+    0.3,
     1.6f
   );
 
@@ -109,8 +109,8 @@ int main(int argc, char* argv[])
 
   */
 
-  unsigned lw = 20;
-  unsigned lh = 20;
+  unsigned lw = 50;
+  unsigned lh = 50;
 
   auto landscape = std::make_shared<Composite>();
 
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
       unsigned i_3 = y * lw + x;
 
-      points[i_3] = glm::vec3(1.0f / (double) lw, 0.3f, 1.0f / (double) lh) * glm::vec3(x, distribution(generator), y);
+      points[i_3] = glm::vec3(1.0f / (double) (lw-1), 0.3f, 1.0f / (double) (lh-1)) * glm::vec3(x, distribution(generator), y);
       //points[i_3] = 1.0f * glm::vec3(x, 3, y);
 
       if (x == 0 || y == 0) { continue; }
@@ -160,12 +160,14 @@ int main(int argc, char* argv[])
 
   landscape->optimize();
 
-  landscape->translate(glm::vec3(-0.5f, -1.0f, -0.5f));
   landscape->scale(glm::vec3(20, 1 , 20));
+
+  landscape->translate(glm::vec3(-10.0f, -1.0f, -10.0f));
+
 
   auto floor = std::make_shared<Box>(dark_red);
   floor->scale(glm::vec3(10,1,10));
-  floor->translate(glm::vec3(0,-2,0));
+  floor->translate(glm::vec3(0,-4,0));
 
   auto all = std::make_shared<Composite>();
 
@@ -200,12 +202,12 @@ int main(int argc, char* argv[])
     Color(1.0f)
   );
 
-  light.translate(glm::vec3(100, 100, 100));
+  light.translate(glm::vec3(0, 200, 100));
 
   Camera camera(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 60.0f);
   // Camera camera;
-  camera.rotate(-0.4, glm::vec3(1, 0,0));
-  camera.translate(glm::vec3(0, 5.0f, 20.0f));
+  camera.rotate(-0.0, glm::vec3(1, 0,0));
+  camera.translate(glm::vec3(0, 1.0f, 25.0f));
 
 
 

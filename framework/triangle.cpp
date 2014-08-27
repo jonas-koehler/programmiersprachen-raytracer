@@ -34,13 +34,13 @@ Triangle::Triangle(std::shared_ptr<Material> const& material, std::array<glm::ve
     }
   }
 
-  transformed_bbox_ = t_ * bbox_;
+  world_bbox_ = world_transform_ * bbox_;
 }
 
 Intersection
 Triangle::intersect(Ray const& r) const
 {
-  auto ray = t_inv_ * r;
+  auto ray = object_ray(r);
 
   auto vn = glm::dot(ray.d, n_);
 
@@ -64,7 +64,7 @@ Triangle::intersect(Ray const& r) const
 
   // intersection inside triangle?
   if (a >= 0.0f && b >= 0.0f && a+b <= 1.0f) {
-    return Intersection(true, t, transform_normal(n_), material_);
+    return Intersection(true, t, world_normal(n_), material_);
   }
 
   return Intersection();

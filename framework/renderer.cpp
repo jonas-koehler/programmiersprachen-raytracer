@@ -151,13 +151,13 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
     auto eye_dir = -ray.d;
     auto normal = glm::faceforward(isec.n, ray.d, isec.n);
 
-    //return Color(normal.x, normal.y, normal.z);
-
     for (auto const& light: lights) {
       auto light_dir = glm::normalize (light.position() - p);
 
       Ray shadow_ray(p + RAY_EPSILON * light_dir, light_dir, ray.depth);
-      if (!trace(shadow_ray).hit) {
+      auto shadow_color = shadow(shadow_ray);
+
+      if (!shadow_color.is_black()) {
 
         // diffuse light
         auto cos_phi = glm::dot (light_dir, normal);
@@ -165,11 +165,14 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         result += cos_phi * (light.ld() * material->kd);
 
         // specular highlights
-        auto reflect_light_dir = glm::reflect (light_dir, normal);
+        auto reflect_light_dir = glm::normalize (glm::reflect (light_dir, normal));
         auto cos_beta = glm::dot (reflect_light_dir, eye_dir);
+        cos_beta = cos_beta > 0.0f ? cos_beta : 0.0f;
         auto cos_beta_m = glm::pow (cos_beta, material->m);
-        //result += cos_beta_m * light.ld() * material->ks;
+        result += cos_beta_m * (light.ld() * material->ks);
       }
+
+      result = shadow_color * result;
 
       // ambient light
       result += light.la() * material->ka;
@@ -207,8 +210,8 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         }
 
         Ray refracted_ray(o, d, ray.depth-1);
-        result = material->transparency * result;
-        result += (1.0f - material->transparency) * shade(refracted_ray, trace(refracted_ray));
+        result = (1.0f - material->transparency) * result;
+        result += material->transparency * shade(refracted_ray, trace(refracted_ray));
       }
     }
 
@@ -217,5 +220,37 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
   // background color
   } else {
     return Color(1.0f, 1.0f, 1.0f);
+  }
+}
+
+Color
+Renderer::shadow(Ray & ray) const
+{
+  auto isec = trace(ray);
+  if (isec.hit) {
+    auto material = isec.m;
+
+    if (material->transparency > 0) {
+      ray.o = ray.point_at(isec.t) + RAY_EPSILON * ray.d;
+
+      auto normal = glm::faceforward(isec.n, ray.d, isec.n);
+      auto cos_phi = glm::dot(normal, -ray.d);
+      cos_phi = cos_phi >= 0.0f ? cos_phi : 0.0f;
+
+      auto result = Color(1) - material->kd;;
+      result *= material->transparency;
+      result += material->kd;
+      result *= cos_phi;
+
+      if (result.is_black())
+        return Color(0);
+      else
+        return result * shadow(ray);
+
+    } else {
+      return Color(0);
+    }
+  } else {
+    return Color(1);
   }
 }

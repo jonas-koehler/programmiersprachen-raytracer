@@ -34,7 +34,14 @@
 class Renderer
 {
 public:
-  Renderer(unsigned w, unsigned h, std::string const& file, Scene const& scene, std::shared_ptr<Sampler> const& sampler, bool multithreading);
+
+  enum class Options {
+
+  };
+
+  Renderer(unsigned w, unsigned h, std::string const& file,
+           Scene const& scene, std::shared_ptr<Sampler> const& sampler,
+           unsigned char options);
 
   void render();
 
@@ -52,10 +59,12 @@ private:
   Intersection trace(Ray const&) const;
   Color shade(Ray const& ray, Intersection const& isec) const;
 
+  Color shadow(Ray & ray) const;
+
   unsigned width_;
   unsigned height_;
   std::shared_ptr<Sampler> sampler_;
-  Scene scene_;
+  Scene const& scene_;
   std::string filename_;
   std::vector<Color> colorbuffer_;
   std::vector<unsigned> sample_num_;

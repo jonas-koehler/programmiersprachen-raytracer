@@ -9,7 +9,7 @@ Box::intersect(Ray const& r) const
 {
   float tmin, tmax, tymin , tymax, tzmin, tzmax;
 
-  auto ray = t_inv_ * r;
+  auto ray = object_ray(r);
 
   if (ray.d.x >= 0.0f) {
     tmin = (-1.0f - ray.o.x) * ray.d_inv.x;
@@ -88,7 +88,7 @@ Box::intersect(Ray const& r) const
       normal = glm::vec3(0.0f, 0.0f, -1.0f);
   }
 
-  return Intersection(true, t, transform_normal(normal), material_);
+  return Intersection(true, t, world_normal(normal), material_);
 }
 
 std::ostream&
