@@ -29,6 +29,7 @@
 #include "sphere.hpp"
 #include "cylinder.hpp"
 #include "triangle.hpp"
+#include "cone.hpp"
 
 #include "sample.hpp"
 

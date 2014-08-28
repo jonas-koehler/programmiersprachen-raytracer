@@ -28,7 +28,7 @@
 #include <thread>
 
 #ifndef RAY_EPSILON
-  #define RAY_EPSILON 0.001f
+  #define RAY_EPSILON 0.01f
 #endif //RAY_EPSILON
 
 #ifndef NUM_THREADS
@@ -56,10 +56,9 @@ public:
     MultiThreading   =   0x20,
   };
 
-  Renderer(unsigned w, unsigned h, std::string const& file,
-           Scene const& scene, unsigned char options);
+  Renderer(unsigned w, unsigned h, Scene const& scene, unsigned char options);
 
-  int render();
+  int render(std::string const& ppmfile);
 
   void write(Pixel const& p);
 
@@ -78,11 +77,14 @@ private:
       auto cam = renderer.scene_.camera();
       while (sampler->samples_left()) {
         auto sample = sampler->next_sample();
-        auto ray = cam.generate_ray(sample);
-        Pixel px(std::round(sample.x * renderer.width_), std::round(sample.y * renderer.height_));
+        auto ray = cam->generate_ray(sample);
+        Pixel px(std::round(sample.x * renderer.width_-1), std::round(sample.y * renderer.height_));
+        px.x = std::min(renderer.width_ - 1, px.x);
+        px.y = std::min(renderer.height_ - 1, px.y);
         px.color = renderer.shade(ray, renderer.trace(ray));
         renderer.write(px);
       }
+      sampler->reset();
     }
 
     Renderer & renderer;
@@ -98,7 +100,6 @@ private:
   unsigned height_;
   std::vector<RenderCallback> render_callbacks_;
   Scene const& scene_;
-  std::string filename_;
   std::vector<Color> colorbuffer_;
   std::vector<unsigned> sample_num_;
   PpmWriter ppm_;

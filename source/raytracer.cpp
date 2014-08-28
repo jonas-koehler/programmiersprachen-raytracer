@@ -2,7 +2,7 @@
 #include <fensterchen.hpp>
 
 #include <random>
-
+#include <sstream>
 
 int main(int argc, char* argv[])
 {
@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   unsigned const height = 600;
   std::string const filename = "./checkerboard.ppm";
 
-  bool multithreading = true;
+  bool window = true;
 
   auto sampler = std::make_shared<RotatedGridSampler>(width, height, 29.5f);
 
@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     Color(0.6f, 0.3f, 0.2f),
     Color(0.1f),
     200.0f,
-    1.0f,
+    1.00f,
     1.0f
   );
 
@@ -35,10 +35,10 @@ int main(int argc, char* argv[])
   auto water = std::make_shared<Material>(
     Color(1.0f),
     Color(0.0f, 0.8f, 1.0f),
-    Color(0.0f),
+    Color(0.5f),
     200.0f,
     0.3,
-    1.6f
+    1.33f
   );
 
   Scene scene;
@@ -109,131 +109,178 @@ int main(int argc, char* argv[])
 
   */
 
-  unsigned lw = 50;
-  unsigned lh = 50;
+  // unsigned lw = 6;
+  // unsigned lh = 6;
 
-  auto landscape = std::make_shared<Composite>();
+  // auto landscape = std::make_shared<Composite>();
 
-  std::vector<glm::vec3> points(lw*lh);
+  // std::vector<glm::vec3> points(lw*lh);
 
-  std::default_random_engine generator;
-  std::uniform_real_distribution<double> distribution(0.0,1.0);
+  // std::default_random_engine generator;
+  // std::uniform_real_distribution<double> distribution(0.0,1.0);
 
-  unsigned test = 0;
+  // unsigned test = 0;
 
-  for (unsigned x=0; x < lw; ++x) {
-    for (unsigned y=0; y < lh; ++y) {
+  // for (unsigned x=0; x < lw; ++x) {
+  //   for (unsigned y=0; y < lh; ++y) {
 
-      unsigned i_3 = y * lw + x;
+  //     unsigned i_3 = y * lw + x;
 
-      points[i_3] = glm::vec3(1.0f / (double) (lw-1), 0.3f, 1.0f / (double) (lh-1)) * glm::vec3(x, distribution(generator), y);
-      //points[i_3] = 1.0f * glm::vec3(x, 3, y);
+  //     points[i_3] = glm::vec3(1.0f / (double) (lw-1), 0.3f, 1.0f / (double) (lh-1)) * glm::vec3(x, distribution(generator), y);
+  //     //points[i_3] = 1.0f * glm::vec3(x, 3, y);
 
-      if (x == 0 || y == 0) { continue; }
+  //     if (x == 0 || y == 0) { continue; }
 
-      unsigned i_0 = (y-1) * lw + (x-1);
-      unsigned i_1 = (y-1) * lw + x;
-      unsigned i_2 = y * lw + (x-1);
-
-
-      std::array<glm::vec3, 3> v_1{
-        points[i_0],
-        points[i_3],
-        points[i_1]
-      };
-
-      std::array<glm::vec3, 3> v_2{
-       points[i_0],
-       points[i_2],
-       points[i_3]
-      };
-
-      auto t_1 = std::make_shared<Triangle>(water, v_1);
-      auto t_2 = std::make_shared<Triangle>(water, v_2);
-
-      test += 1;
-
-      landscape->add_child(std::move(t_1));
-      landscape->add_child(std::move(t_2));
-    }
-  }
-
-  landscape->optimize();
-
-  landscape->scale(glm::vec3(20, 1 , 20));
-
-  landscape->translate(glm::vec3(-10.0f, -1.0f, -10.0f));
+  //     unsigned i_0 = (y-1) * lw + (x-1);
+  //     unsigned i_1 = (y-1) * lw + x;
+  //     unsigned i_2 = y * lw + (x-1);
 
 
-  auto floor = std::make_shared<Box>(dark_red);
-  floor->scale(glm::vec3(10,1,10));
-  floor->translate(glm::vec3(0,-4,0));
+  //     std::array<glm::vec3, 3> v_1{
+  //       points[i_0],
+  //       points[i_3],
+  //       points[i_1]
+  //     };
 
-  auto all = std::make_shared<Composite>();
+  //     std::array<glm::vec3, 3> v_2{
+  //      points[i_0],
+  //      points[i_2],
+  //      points[i_3]
+  //     };
+
+  //     auto t_1 = std::make_shared<Triangle>(water, v_1);
+  //     auto t_2 = std::make_shared<Triangle>(water, v_2);
+
+  //     test += 1;
+
+  //     landscape->add_child(std::move(t_1));
+  //     landscape->add_child(std::move(t_2));
+  //   }
+  // }
+
+  // landscape->optimize();
+
+  // landscape->scale(glm::vec3(20, 1 , 20));
+
+  // landscape->translate(glm::vec3(-10.0f, -1.0f, -10.0f));
+
+
+  // auto floor = std::make_shared<Box>(dark_red);
+  // floor->scale(glm::vec3(10,1,10));
+  // floor->translate(glm::vec3(0,-4,0));
+
+  // auto all = std::make_shared<Composite>();
+
+  // auto box = std::make_shared<Box>(yellow);
+  // box->translate(glm::vec3(4,1,0));
+
+  // auto sphere = std::make_shared<Sphere>(yellow);
+  // sphere->translate(glm::vec3(-4,1,0));
+  // sphere->scale(glm::vec3(1,5,1));
+
+
+  // std::array<glm::vec3, 3> v{
+  //   glm::vec3(-1,1,0),
+  //   glm::vec3(0,2,0),
+  //   glm::vec3(1,1,0)
+  // };
+
+  /*auto cone = std::make_shared<Cone>(yellow);
+  cone->scale(glm::vec3(2, 2, 2));
+  cone->rotate(1.7, glm::vec3(0, 1, 0));
+  cone->translate(glm::vec3(0, 0, -9));*/
+
+
+
+  //all->add_child(box);
+  //all->add_child(sphere);
+  //all->add_child(cone);
+  //all->add_child(landscape);
+  //all->add_child(floor);
+
+
+
+  //all->optimize();
+
+  //scene.add_shape(all);
+
 
   auto box = std::make_shared<Box>(yellow);
-  box->translate(glm::vec3(4,1,0));
+  box->scale(glm::vec3(0.2));
+  box->translate(glm::vec3(1, 1, -8));
+  box->rotate(M_PI / 4, glm::vec3(0,0,1));
 
   auto sphere = std::make_shared<Sphere>(yellow);
-  sphere->translate(glm::vec3(-4,1,0));
+  sphere->scale(glm::vec3(0.2));
+  sphere->translate(glm::vec3(0, 0, -10));
 
+  scene.add_shape(box);
+  scene.add_shape(sphere);
 
-  std::array<glm::vec3, 3> v{
-    glm::vec3(-1,1,0),
-    glm::vec3(0,2,0),
-    glm::vec3(1,1,0)
-  };
-
-  auto triangle = std::make_shared<Triangle>(yellow, v);
-
-  all->add_child(box);
-  all->add_child(sphere);
-  all->add_child(triangle);
-  all->add_child(landscape);
-  all->add_child(floor);
-
-  all->optimize();
-
-  scene.add_shape(all);
-
-
-  Light light(
+  auto light = std::make_shared<Light>(
     Color(0.1f),
     Color(1.0f)
   );
 
-  light.translate(glm::vec3(0, 200, 100));
+  light->translate(glm::vec3(0, 1000, 0));
 
-  Camera camera(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 60.0f);
-  camera.rotate(0.3, glm::vec3(1, 0,0));
-  camera.translate(glm::vec3(0, -3.0f, 25.0f));
+  /*auto camera = std::make_shared<Camera>(
+    glm::vec3(0.0f),
+    glm::vec3(0.0f, 0.0f, -1.0f),
+    glm::vec3(0.0f, 1.0f, 0.0f),
+    60.0f
+  );*/
+
+  auto camera = std::make_shared<Camera>();
+
+  //camera->rotate(-0.3, glm::vec3(1, 0,0));
+
+  //glm::vec3 cam_pos(0, 10.0f, 25.0f);
+  //camera->translate(cam_pos);
 
   scene.camera(camera);
   scene.add_light(light);
 
-  unsigned char options = Renderer::Option::MultiThreading | Renderer::Option::SuperSampling4x;
-  Renderer app(width, height, filename, scene, options);
+  unsigned char options = Renderer::Option::MultiThreading /*| Renderer::Option::SuperSampling4x*/;
+  Renderer app(width, height, scene, options);
 
-  unsigned int render_time = 0;
-  bool finished = false;
-  std::thread thr([&app, &render_time, &finished]() { render_time = app.render(); finished = true;});
+  bool done = false;
 
-  Window win(glm::ivec2(width,height));
 
-  while (!win.shouldClose()) {
-    if (win.isKeyPressed(GLFW_KEY_ESCAPE)) {
-      win.stop();
+  std::thread thr([&app, &camera, &done]() {
+    const std::string ppm_base = "ppm/";
+    const int num_frames = 1;
+    for (unsigned i=0; i<num_frames; ++i) {
+      std::stringstream filename;
+
+
+      std::string prefix;
+      if (i < 10) {
+        prefix = "00";
+      } else if (i < 100) {
+        prefix = "0";
+      }
+
+      filename << ppm_base << prefix << i << ".ppm";
+      auto render_time = app.render(filename.str());
+      std::cout << "rendered frame " << i << " in " << render_time << "ms" << std::endl;
+      //camera->translate(-cam_pos);
+      camera->rotate(M_PI / 120, glm::vec3(0,1,0));
+      //camera->translate(cam_pos);
     }
+    done = false;
+  });
 
-    if (finished) {
-      std::cout << "rendered in " << render_time << "ms" << std::endl;
-      finished = false;
+  if (window) {
+    Window win(glm::ivec2(width,height));
+    while (!win.shouldClose()) {
+      if (win.isKeyPressed(GLFW_KEY_ESCAPE) || done) {
+        win.stop();
+      }
+      glDrawPixels( width, height, GL_RGB, GL_FLOAT
+                  , app.colorbuffer().data());
+      win.update();
     }
-
-    glDrawPixels( width, height, GL_RGB, GL_FLOAT
-                , app.colorbuffer().data());
-
-    win.update();
   }
 
   thr.join();

@@ -8,6 +8,7 @@ class StandardGridSampler : public Sampler
 public:
   StandardGridSampler(unsigned res_x, unsigned res_y);
   Sample next_sample() override;
+  void reset() override;
 private:
   unsigned current_x_, current_y_, res_x_, res_y_;
   float res_x_inv_, res_y_inv_;

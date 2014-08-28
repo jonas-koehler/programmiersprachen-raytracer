@@ -10,6 +10,7 @@ class RotatedGridSampler : public Sampler
 public:
   RotatedGridSampler(unsigned res_x, unsigned res_y, float alpha_deg_);
   Sample next_sample() override;
+  void reset() override;
 private:
   unsigned grid_pos_;
   float current_x_, current_y_, res_x_, res_y_;

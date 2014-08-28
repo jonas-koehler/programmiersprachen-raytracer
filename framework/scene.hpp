@@ -10,19 +10,19 @@ class Scene
 public:
   Scene();
 
-  void camera(Camera const& camera);
-  Camera const& camera() const;
+  void camera(std::shared_ptr<Camera> const& camera);
+  std::shared_ptr<Camera> const& camera() const;
 
   void add_shape(std::shared_ptr<Shape> const& shape);
   Composite const& root() const;
 
-  void add_light(Light const& light);
-  std::vector<Light> const& lights() const;
+  void add_light(std::shared_ptr<Light> const& light);
+  std::vector<std::shared_ptr<Light>> const& lights() const;
 
 private:
-  Camera camera_;
+  std::shared_ptr<Camera> camera_;
   Composite root_;
-  std::vector<Light> lights_;
+  std::vector< std::shared_ptr<Light> > lights_;
 };
 
 #endif // BUW_SCENE_HPP

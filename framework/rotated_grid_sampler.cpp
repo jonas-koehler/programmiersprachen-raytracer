@@ -56,3 +56,9 @@ RotatedGridSampler::next_sample()
 
   return smp;
 }
+
+void 
+RotatedGridSampler::reset()
+{
+  samples_left_ = true;
+}

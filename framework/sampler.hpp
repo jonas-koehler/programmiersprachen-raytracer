@@ -8,6 +8,7 @@ class Sampler
 public:
   Sampler();
   virtual Sample next_sample() = 0;
+  virtual void reset() = 0;
   void restrict(float min_x,float min_y,float max_x,float max_y);
   unsigned total_samples() const;
   bool samples_left() const;

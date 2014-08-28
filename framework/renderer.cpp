@@ -1,3 +1,4 @@
+
 // -----------------------------------------------------------------------------
 // Copyright  : (C) 2014 Andreas-C. Bernstein
 // License    : MIT (see the file LICENSE)
@@ -9,13 +10,12 @@
 
 #include "renderer.hpp"
 
-Renderer::Renderer(unsigned w, unsigned h, std::string const& file,
-                   Scene const& scene, unsigned char options)
+Renderer::Renderer(unsigned w, unsigned h, Scene const& scene,
+                   unsigned char options)
   : width_(w)
   , height_(h)
   , colorbuffer_(w*h, Color(0.0, 0.0, 0.0))
   , sample_num_(w*h, 0.0f)
-  , filename_(file)
   , ppm_(width_, height_)
   , scene_(scene)
   , render_callbacks_()
@@ -31,7 +31,8 @@ Renderer::Renderer(unsigned w, unsigned h, std::string const& file,
   }
 
   // multithreading active?
-  bool multithreading = (options & Option::MultiThreading) && !(options & Option::SingleThreading);
+  bool multithreading = (options & Option::MultiThreading)
+                        && !(options & Option::SingleThreading);
 
   // RGSS or grid sampling?
   bool rgss = (options & Option::RGSS) && !(options & Option::GridSampling);
@@ -66,7 +67,7 @@ Renderer::Renderer(unsigned w, unsigned h, std::string const& file,
 }
 
 int
-Renderer::render()
+Renderer::render(std::string const& ppmfile)
 {
   auto begin = std::chrono::high_resolution_clock::now();
 
@@ -75,15 +76,13 @@ Renderer::render()
     threads.push_back(std::thread(cb));
   }
   for (auto & t: threads) {
-    if (t.joinable()) {
-      t.join();
-    }
+    t.join();
   }
 
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
 
-  ppm_.save(filename_);
+  ppm_.save(ppmfile);
 
   return duration;
 }
@@ -100,7 +99,7 @@ Renderer::write(Pixel const& p)
       << std::endl;
   } else {
     sample_num_[buf_pos] += 1;
-    colorbuffer_[buf_pos] *= (sample_num_[buf_pos] - 1);
+    colorbuffer_[buf_pos] *= (-sample_num_[buf_pos] - 1);
     colorbuffer_[buf_pos] += p.color;
     colorbuffer_[buf_pos] *= 1.0f  / (float) sample_num_[buf_pos];
   }
@@ -118,7 +117,7 @@ Renderer::trace(Ray const& ray) const
     auto d = ray.d;
     auto o = ray.o + RAY_EPSILON * d;
     Ray new_ray(o, d, ray.depth);
-    isec = scene_.root().intersect(ray);
+    isec = scene_.root().intersect(new_ray);
   }
   return isec;
 }
@@ -134,10 +133,15 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
     auto lights = scene_.lights();
     auto material = isec.m;
     auto eye_dir = -ray.d;
-    auto normal = isec.n; //glm::faceforward(isec.n, ray.d, isec.n);
+    auto normal = isec.n;//glm::faceforward(isec.n, ray.d, isec.n);
+
+    auto inside_material = glm::dot(isec.n, ray.d) > 0;
+    if (inside_material) {
+      normal *= -1;
+    }
 
     for (auto const& light: lights) {
-      auto light_dir = glm::normalize (light.position() - p);
+      auto light_dir = glm::normalize (light->position() - p);
 
       Ray shadow_ray(p + RAY_EPSILON * light_dir, light_dir, ray.depth);
       auto shadow_color = shadow(shadow_ray);
@@ -147,20 +151,20 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         // diffuse light
         auto cos_phi = glm::dot (light_dir, normal);
         cos_phi = cos_phi > 0.0f ? cos_phi : 0.0f;
-        result += cos_phi * (light.ld() * material->kd);
+        result += cos_phi * (light->ld() * material->kd);
 
         // specular highlights
         auto reflect_light_dir = glm::normalize (glm::reflect (light_dir, normal));
         auto cos_beta = glm::dot (reflect_light_dir, eye_dir);
         cos_beta = cos_beta > 0.0f ? cos_beta : 0.0f;
         auto cos_beta_m = glm::pow (cos_beta, material->m);
-        result += cos_beta_m * (light.ld() * material->ks);
+        result += cos_beta_m * (light->ld() * material->ks);
       }
 
       result = shadow_color * result;
 
       // ambient light
-      result += light.la() * material->ka;
+      result += light->la() * material->ka;
     }
 
     if (ray.depth > 0) {
@@ -182,23 +186,21 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         auto eta = material->n;
 
         // inside the material?
-        if (glm::dot(ray.d, isec.n) < 0.0f) {
+        if (!inside_material) {
           eta = 1.0f / eta;
-        } else {
-          normal *= -1;
         }
 
         auto d = glm::refract (ray.d, normal, eta);
         auto o = p + d * RAY_EPSILON;
 
         // inner reflection
-        if (d == glm::vec3(0.0f)) {
-          return reflected_color;
+        if (d.x == 0 && d.y == 0 && d.z == 0) {
+          result += reflected_color;
+        } else {
+          Ray refracted_ray(o, d, ray.depth-1);
+          result = (1.0f - material->transparency) * result;
+          result += material->transparency * shade(refracted_ray, trace(refracted_ray));
         }
-
-        Ray refracted_ray(o, d, ray.depth-1);
-        result = (1.0f - material->transparency) * result;
-        result += material->transparency * shade(refracted_ray, trace(refracted_ray));
       }
     }
 
@@ -222,7 +224,7 @@ Renderer::shadow(Ray & ray) const
 
       auto normal = glm::faceforward(isec.n, ray.d, isec.n);
       auto cos_phi = glm::dot(normal, ray.d);
-      //cos_phi = cos_phi >= 0.0f ? cos_phi : 0.0f;
+      cos_phi = cos_phi >= 0.0f ? cos_phi : 0.0f;
 
       auto result = Color(1) - material->kd;;
       result *= material->transparency;

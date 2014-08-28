@@ -33,3 +33,9 @@ StandardGridSampler::next_sample()
 
   return smp;
 }
+
+void
+StandardGridSampler::reset()
+{
+  samples_left_ = true;
+}

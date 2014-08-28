@@ -7,12 +7,12 @@ Scene::Scene()
 {}
 
 void
-Scene::camera(Camera const& camera)
+Scene::camera(std::shared_ptr<Camera> const& camera)
 {
   camera_ = camera;
 }
 
-Camera const&
+std::shared_ptr<Camera> const&
 Scene::camera() const
 {
   return camera_;
@@ -31,13 +31,13 @@ Scene::root() const
 }
 
 void
-Scene::add_light(Light const& light)
+Scene::add_light(std::shared_ptr<Light> const& light)
 {
   lights_.push_back(light);
 }
 
 
-std::vector<Light> const&
+std::vector< std::shared_ptr<Light> > const&
 Scene::lights() const
 {
   return lights_;
