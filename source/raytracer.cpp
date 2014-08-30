@@ -10,6 +10,13 @@ int main(int argc, char* argv[])
   unsigned const height = 600;
   std::string const filename = "./checkerboard.ppm";
 
+  if (argc < 2) {
+    std::cerr << "usage: raytracer <sdf-file>" << std::endl;
+    return 0;
+  }
+
+  std::string sdf_file(argv[1]);
+
   bool window = true;
 
   auto sampler = std::make_shared<RotatedGridSampler>(width, height, 29.5f);
@@ -41,7 +48,7 @@ int main(int argc, char* argv[])
     1.33f
   );
 
-  Scene scene;
+  auto scene = std::make_shared<Scene>();
 
 
 
@@ -205,24 +212,22 @@ int main(int argc, char* argv[])
   //scene.add_shape(all);
 
 
-  auto box = std::make_shared<Box>(yellow);
-  box->scale(glm::vec3(0.2));
-  box->translate(glm::vec3(1, 1, -8));
-  box->rotate(M_PI / 4, glm::vec3(0,0,1));
+  auto cone = std::make_shared<Cone>(yellow);
+  cone->scale(glm::vec3(10, 10, 10));
+  cone->scale(glm::vec3(0.2));
+  cone->rotate(-1.6 + 3.14, glm::vec3(1,0,0));
+  cone->translate(glm::vec3(0, 0, -11));
 
-  auto sphere = std::make_shared<Sphere>(yellow);
-  sphere->scale(glm::vec3(0.2));
-  sphere->translate(glm::vec3(0, 0, -10));
+  //cone->rotate(M_PI / 4, glm::vec3(0,0,1));
 
-  scene.add_shape(box);
-  scene.add_shape(sphere);
+  scene->add_shape(cone);
 
   auto light = std::make_shared<Light>(
     Color(0.1f),
     Color(1.0f)
   );
 
-  light->translate(glm::vec3(0, 1000, 0));
+  light->translate(glm::vec3(0, 5, -5));
 
   /*auto camera = std::make_shared<Camera>(
     glm::vec3(0.0f),
@@ -238,37 +243,28 @@ int main(int argc, char* argv[])
   //glm::vec3 cam_pos(0, 10.0f, 25.0f);
   //camera->translate(cam_pos);
 
-  scene.camera(camera);
-  scene.add_light(light);
+  scene->camera(camera);
+  scene->add_light(light);
 
-  unsigned char options = Renderer::Option::MultiThreading /*| Renderer::Option::SuperSampling4x*/;
-  Renderer app(width, height, scene, options);
+  unsigned char options = Renderer::Option::MultiThreading /*| Renderer::Option::SuperSampling4x | Renderer::Option::RGSS */;
+
+
+  Renderer app(options);
 
   bool done = false;
 
+  SdfLoader loader(sdf_file);
 
-  std::thread thr([&app, &camera, &done]() {
-    const std::string ppm_base = "ppm/";
-    const int num_frames = 1;
-    for (unsigned i=0; i<num_frames; ++i) {
-      std::stringstream filename;
-
-
-      std::string prefix;
-      if (i < 10) {
-        prefix = "00";
-      } else if (i < 100) {
-        prefix = "0";
+  std::thread thr([&app, &loader, &done]() {
+    int i = 0;
+    while(loader.parse()) {
+      if (loader.has_render_instructions()) {
+        auto ri = loader.get_render_instruction();
+        auto render_time = app.render(ri);
+        std::cout << "rendered frame " << ++i << " to " << ri.outfile << " in " << render_time << "ms" << std::endl;
       }
-
-      filename << ppm_base << prefix << i << ".ppm";
-      auto render_time = app.render(filename.str());
-      std::cout << "rendered frame " << i << " in " << render_time << "ms" << std::endl;
-      //camera->translate(-cam_pos);
-      camera->rotate(M_PI / 120, glm::vec3(0,1,0));
-      //camera->translate(cam_pos);
     }
-    done = false;
+    done = true;
   });
 
   if (window) {

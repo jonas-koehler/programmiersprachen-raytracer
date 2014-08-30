@@ -14,6 +14,7 @@ public:
   std::shared_ptr<Camera> const& camera() const;
 
   void add_shape(std::shared_ptr<Shape> const& shape);
+  void remove_shape(std::shared_ptr<Shape> const& shape);
   Composite const& root() const;
 
   void add_light(std::shared_ptr<Light> const& light);

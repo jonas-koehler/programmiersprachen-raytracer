@@ -37,7 +37,11 @@
 #include "standard_grid_sampler.hpp"
 #include "rotated_grid_sampler.hpp"
 
+#include "render_instruction.hpp"
+#include "render_callback.hpp"
 #include "renderer.hpp"
+
+#include "sdf_loader.hpp"
 
 #include "window.hpp"
 

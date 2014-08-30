@@ -24,6 +24,13 @@ Scene::add_shape(std::shared_ptr<Shape> const& shape)
   root_.add_child(shape);
 }
 
+void
+Scene::remove_shape(std::shared_ptr<Shape> const& shape)
+{
+  root_.remove_child(shape);
+}
+
+
 Composite const&
 Scene::root() const
 {

@@ -14,13 +14,13 @@ Composite::intersect(Ray const& r) const
   auto ray = object_ray(r);
 
   for (auto const& child: children_) {
-     //if (child->intersect_bbox(ray)) {
+    if (child->intersect_bbox(ray)) {
       auto current_isec = child->intersect(ray);
       if (current_isec.hit && current_isec.t > 0 && current_isec.t < min_t) {
         isec = current_isec;
         min_t = current_isec.t;
       }
-    //}
+    }
   }
 
   if (isec.hit) {
@@ -44,6 +44,12 @@ Composite::add_child(std::shared_ptr<Shape> const& new_child)
   }
 
   children_.push_back(new_child);
+}
+
+void
+Composite::remove_child(std::shared_ptr<Shape> const& child)
+{
+  children_.erase(std::remove(children_.begin(), children_.end(), child));
 }
 
 void

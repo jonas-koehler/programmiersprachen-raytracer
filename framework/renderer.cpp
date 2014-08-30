@@ -10,65 +10,45 @@
 
 #include "renderer.hpp"
 
-Renderer::Renderer(unsigned w, unsigned h, Scene const& scene,
-                   unsigned char options)
-  : width_(w)
-  , height_(h)
-  , colorbuffer_(w*h, Color(0.0, 0.0, 0.0))
-  , sample_num_(w*h, 0.0f)
-  , ppm_(width_, height_)
-  , scene_(scene)
-  , render_callbacks_()
+Renderer::Renderer(unsigned char options)
+: width_(0)
+, height_(0)
+, colorbuffer_()
+, sample_num_()
+, samples_per_pixels_sqrt_(1)
+, total_threads_(1)
+, ppm_()
+, scene_()
+, render_callbacks_()
+, sampler_type_(Renderer::SamplerType::GridSampling)
 {
-
-  unsigned samples_per_pixels_sqrt = 1;
-
   // super sampling active?
   if (options & Option::SuperSampling4x) {
-    samples_per_pixels_sqrt = 2;
+    samples_per_pixels_sqrt_ = 2;
   } else if (options & Option::SuperSampling16x) {
-    samples_per_pixels_sqrt = 4;
+    samples_per_pixels_sqrt_ = 4;
   }
 
   // multithreading active?
   bool multithreading = (options & Option::MultiThreading)
-                        && !(options & Option::SingleThreading);
+  && !(options & Option::SingleThreading);
+
+  total_threads_ = (multithreading) ? 100 : 1;
 
   // RGSS or grid sampling?
-  bool rgss = (options & Option::RGSS) && !(options & Option::GridSampling);
-
-
-  unsigned total_threads = (multithreading) ? 200 : 1;
-  float total_threads_inv = 1.0f / ((double) total_threads);
-
-  for (unsigned i=0; i<total_threads; ++i) {
-
-    std::shared_ptr<Sampler> sampler;
-
-    if (rgss) {
-      sampler = std::make_shared<RotatedGridSampler>(
-        samples_per_pixels_sqrt * width_,
-        std::ceil(samples_per_pixels_sqrt * height_ * total_threads_inv),
-        RGSS_ANGLE
-      );
-    } else {
-      sampler = std::make_shared<StandardGridSampler>(
-        samples_per_pixels_sqrt * width_,
-        std::ceil(samples_per_pixels_sqrt * height_ * total_threads_inv)
-      );
-    }
-
-    auto ymin = i * total_threads_inv;
-    auto ymax = (i + 1) * total_threads_inv;
-    sampler->restrict (0, ymin, 1, ymax);
-
-    render_callbacks_.push_back(RenderCallback(*this, sampler));
+  if (options & Option::RGSS) {
+    sampler_type_ = Renderer::SamplerType::RGSS;
+  }
+  else if(options & Option::RandomSampling) {
+    sampler_type_ = Renderer::SamplerType::RandomSampling;
   }
 }
 
 int
-Renderer::render(std::string const& ppmfile)
+Renderer::render(RenderInstruction const& ri)
 {
+  init(ri);
+
   auto begin = std::chrono::high_resolution_clock::now();
 
   std::vector<std::thread> threads;
@@ -82,9 +62,54 @@ Renderer::render(std::string const& ppmfile)
   auto end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count();
 
-  ppm_.save(ppmfile);
+  ppm_->save(outfile_);
 
   return duration;
+}
+
+void
+Renderer::init(RenderInstruction const& ri)
+{
+  if (width_ != ri.res_x || height_ != ri.res_y) {
+    width_ = ri.res_x;
+    height_ = ri.res_y;
+    ppm_ = std::make_shared<PpmWriter>(width_, height_);
+    render_callbacks_.clear();
+
+    float total_threads_inv = 1.0f / ((double) total_threads_);
+
+    for (unsigned i=0; i<total_threads_; ++i) {
+      std::shared_ptr<Sampler> sampler;
+      if (sampler_type_ == Renderer::SamplerType::RGSS) {
+        sampler = std::make_shared<RotatedGridSampler>(
+          samples_per_pixels_sqrt_ * width_,
+          std::ceil(samples_per_pixels_sqrt_ * height_ * total_threads_inv),
+          RGSS_ANGLE
+        );
+      } else if(sampler_type_ == Renderer::SamplerType::RandomSampling) {
+        sampler = std::make_shared<RandomSampler>(
+          samples_per_pixels_sqrt_ * width_ * samples_per_pixels_sqrt_ * height_ * total_threads_inv
+        );
+      } else {
+        sampler = std::make_shared<StandardGridSampler>(
+          samples_per_pixels_sqrt_ * width_,
+          std::ceil(samples_per_pixels_sqrt_ * height_ * total_threads_inv)
+        );
+      }
+
+      auto ymin = i * total_threads_inv;
+      auto ymax = (i + 1) * total_threads_inv;
+      sampler->restrict (0, ymin, 1, ymax);
+
+      render_callbacks_.push_back(RenderCallback(*this, sampler));
+    }
+  }
+
+  colorbuffer_ = std::vector<Color>(width_ * height_, Color(0.0, 0.0, 0.0));
+
+  sample_num_ = std::vector<unsigned>(width_ * height_, 0);
+  scene_ = ri.scene;
+  outfile_ = ri.outfile;
 }
 
 void
@@ -94,30 +119,30 @@ Renderer::write(Pixel const& p)
   size_t buf_pos = (width_*p.y + p.x);
   if (buf_pos >= colorbuffer_.size() || (int)buf_pos < 0) {
     std::cerr << "Fatal Error Renderer::write(Pixel p) : "
-      << "pixel out of ppm_ : "
-      << (int)p.x << "," << (int)p.y
-      << std::endl;
+    << "pixel out of ppm_ : "
+    << (int)p.x << "," << (int)p.y
+    << std::endl;
   } else {
     sample_num_[buf_pos] += 1;
-    colorbuffer_[buf_pos] *= (-sample_num_[buf_pos] - 1);
+    colorbuffer_[buf_pos] *= (sample_num_[buf_pos] - 1);
     colorbuffer_[buf_pos] += p.color;
     colorbuffer_[buf_pos] *= 1.0f  / (float) sample_num_[buf_pos];
   }
 
-  ppm_.write(p);
+  ppm_->write(p);
 }
 
 Intersection
 Renderer::trace(Ray const& ray) const
 {
-  auto isec = scene_.root().intersect(ray);
+  auto isec = scene_->root().intersect(ray);
 
   // avoid too short ray intersections
   if (isec.t < RAY_EPSILON) {
     auto d = ray.d;
     auto o = ray.o + RAY_EPSILON * d;
     Ray new_ray(o, d, ray.depth);
-    isec = scene_.root().intersect(new_ray);
+    isec = scene_->root().intersect(new_ray);
   }
   return isec;
 }
@@ -130,7 +155,7 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
     Color result(0.0f, 0.0f, 0.0f);
 
     auto p = ray.point_at(isec.t);
-    auto lights = scene_.lights();
+    auto lights = scene_->lights();
     auto material = isec.m;
     auto eye_dir = -ray.d;
     auto normal = isec.n;//glm::faceforward(isec.n, ray.d, isec.n);

@@ -10,6 +10,8 @@
 #ifndef BUW_RENDERER_HPP
 #define BUW_RENDERER_HPP
 
+class Renderer;
+
 #include "color.hpp"
 #include "pixel.hpp"
 #include "ray.hpp"
@@ -19,6 +21,9 @@
 #include "ppmwriter.hpp"
 #include "rotated_grid_sampler.hpp"
 #include "standard_grid_sampler.hpp"
+#include "random_sampler.hpp"
+#include "render_callback.hpp"
+#include "render_instruction.hpp"
 
 #include <glm/glm.hpp>
 #include <string>
@@ -41,6 +46,8 @@
 
 class Renderer
 {
+  friend class RenderCallback;
+
 public:
 
   enum Option {
@@ -51,14 +58,15 @@ public:
 
     GridSampling     =   0x04,
     RGSS             =   0x08,
+    RandomSampling   =   0x10,
 
-    SingleThreading  =   0x10,
-    MultiThreading   =   0x20,
+    SingleThreading  =   0x20,
+    MultiThreading   =   0x40,
   };
 
-  Renderer(unsigned w, unsigned h, Scene const& scene, unsigned char options);
+  Renderer(unsigned char options);
 
-  int render(std::string const& ppmfile);
+  int render(RenderInstruction const& ri);
 
   void write(Pixel const& p);
 
@@ -69,27 +77,13 @@ public:
 
 private:
 
-  struct RenderCallback {
-
-    RenderCallback(Renderer & r, std::shared_ptr<Sampler> const& smpl) : renderer(r), sampler(smpl) {}
-
-    void operator() () const {
-      auto cam = renderer.scene_.camera();
-      while (sampler->samples_left()) {
-        auto sample = sampler->next_sample();
-        auto ray = cam->generate_ray(sample);
-        Pixel px(std::round(sample.x * renderer.width_-1), std::round(sample.y * renderer.height_));
-        px.x = std::min(renderer.width_ - 1, px.x);
-        px.y = std::min(renderer.height_ - 1, px.y);
-        px.color = renderer.shade(ray, renderer.trace(ray));
-        renderer.write(px);
-      }
-      sampler->reset();
-    }
-
-    Renderer & renderer;
-    std::shared_ptr<Sampler> sampler;
+  enum class SamplerType {
+    GridSampling,
+    RGSS,
+    RandomSampling
   };
+
+  void init(RenderInstruction const& ri);
 
   Intersection trace(Ray const&) const;
   Color shade(Ray const& ray, Intersection const& isec) const;
@@ -98,11 +92,18 @@ private:
 
   unsigned width_;
   unsigned height_;
+  std::string outfile_;
+  std::shared_ptr<Scene> scene_;
+  std::shared_ptr<PpmWriter> ppm_;
+  unsigned samples_per_pixels_sqrt_;
+  unsigned total_threads_;
+  SamplerType sampler_type_;
+
   std::vector<RenderCallback> render_callbacks_;
-  Scene const& scene_;
-  std::vector<Color> colorbuffer_;
   std::vector<unsigned> sample_num_;
-  PpmWriter ppm_;
+  std::vector<Color> colorbuffer_;
+
+
 };
 
 #endif // #ifndef BUW_RENDERER_HPP
