@@ -122,6 +122,8 @@ Renderer::init(RenderInstruction const& ri)
 void
 Renderer::write(Pixel const& p)
 {
+
+  Pixel out_pixel(p);
   // flip pixels, because of opengl glDrawPixels
   size_t buf_pos = (width_*p.y + p.x);
   if (buf_pos >= colorbuffer_.size() || (int)buf_pos < 0) {
@@ -134,9 +136,10 @@ Renderer::write(Pixel const& p)
     colorbuffer_[buf_pos] *= (sample_num_[buf_pos] - 1);
     colorbuffer_[buf_pos] += p.color;
     colorbuffer_[buf_pos] *= 1.0f  / (float) sample_num_[buf_pos];
+    out_pixel.color = colorbuffer_[buf_pos];
   }
 
-  ppm_->write(p);
+  ppm_->write(out_pixel);
 }
 
 Intersection

@@ -8,12 +8,12 @@ sdf = ""
 #materials
 sdf += "define material    red    0.1 0.1 0.1   0.5 0 0   0.5 0.5 0.5  200   1   1 \n"
 sdf += "define material    blue    0.1 0.1 0.1   0 0 0.5   0.5 0.5 0.5  200   1   1 \n"
-sdf += "define material    grey    0.1 0.1 0.1   0.3 0.3 0.3   0.2 0.2 0.2  200   1   1 \n"
-sdf += "define material    test    0.1 0.1 0.1   0.8 0.8 0.8   0.2 0.2 0.2  200   0.1   1.6 \n"
+sdf += "define material    test    0.1 0.1 0.1   1.0 1.0 1.0   0.1 0.1 0.1  200   1   1 \n"
+sdf += "define material    grey    0.1 0.1 0.1   0.8 0.8 0.8   0.2 0.2 0.2  200   0.1   1.6 \n"
 
 #camera
 sdf += "define camera eye 60.0  0 0 0  0 0 1  0 1 0  \n"
-sdf += "transform eye translate 0 3 8 \n"
+sdf += "transform eye translate 0 3 15 \n"
 
 
 # lights
@@ -22,7 +22,7 @@ sdf += "define light spot1   -100 100 100   0.1 0.2 0.3   0.5 0.6 0.8 \n"
 
 # floor
 
-sdf += "define shape box floor -1 -1 -1 1 1 1 grey\n"
+sdf += "define shape box floor -1 -1 -1 1 1 1 test\n"
 sdf += "transform floor scale 100 1 100\n"
 sdf += "transform floor translate 0 -2 0 \n"
 
@@ -32,22 +32,9 @@ for line in f:
   sdf += line
 sdf += "\n"
 
-sdf += "transform mesh rotate 0 1 0 0\n"
-sdf += "transform mesh scale 1.2 1.2 1.2 \n"
+sdf += "transform mesh rotate 45 0 1 0\n"
+sdf += "transform mesh scale 0.5 0.5 0.5 \n"
 sdf += "transform mesh translate 0.0 0.5 0.0 \n"
-
-# eggs
-for i in range (0,5):
-  sdf += "define shape sphere egg" + str(2*i) + " 0 0 0 1 red\n"
-  sdf += "transform egg" + str(2*i) + " scale 1 2 1\n"
-  sdf += "transform egg" + str(2*i) + " scale 0.3 0.3 0.3\n"
-  sdf += "transform egg" + str(2*i) + " translate 5 0 0\n"
-  sdf += "transform egg" + str(2*i) + " rotate " + str(2*i * 45) + " 0 1 0\n"
-  sdf += "define shape sphere egg" + str(2*i+1) + " 0 0 0 1 blue\n"
-  sdf += "transform egg" + str(2*i+1) + " scale 1 2 1\n"
-  sdf += "transform egg" + str(2*i+1) + " scale 0.3 0.3 0.3\n"
-  sdf += "transform egg" + str(2*i+1) + " translate 5 0 0\n"
-  sdf += "transform egg" + str(2*i+1) + " rotate " + str((2*i + 1) * 45) + " 0 1 0\n"
 
 #animation frames
 i=0

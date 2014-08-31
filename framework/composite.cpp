@@ -3,7 +3,10 @@
 Composite::Composite()
  : Shape()
  , children_()
-{}
+{
+  bbox_.pmin = glm::vec3(0);
+  bbox_.pmax = glm::vec3(0);
+}
 
 Intersection
 Composite::intersect(Ray const& r) const
@@ -119,8 +122,10 @@ Composite::optimize()
 
   for (unsigned i=0; i<subnodes.size(); ++i) {
     auto subnode = subnodes[i];
-    subnode->optimize();
-    children_.push_back(subnode);
+    if (subnode->bbox().size() > 0) {
+      subnode->optimize();
+      children_.push_back(subnode);
+    }
   }
 
   #endif
