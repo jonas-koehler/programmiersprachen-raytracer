@@ -16,6 +16,7 @@ public:
   Light(Color ambient, Color diffuse);
 
   void translate(glm::vec3 const& t);
+  void rotate(float rad, glm::vec3 const& axis);
 
   glm::vec3 const& position() const;
 

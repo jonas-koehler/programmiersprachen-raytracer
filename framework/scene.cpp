@@ -4,7 +4,9 @@ Scene::Scene()
  : camera_()
  , root_()
  , lights_()
-{}
+{
+  root_ = std::make_shared<Composite>();
+}
 
 void
 Scene::camera(std::shared_ptr<Camera> const& camera)
@@ -21,17 +23,17 @@ Scene::camera() const
 void
 Scene::add_shape(std::shared_ptr<Shape> const& shape)
 {
-  root_.add_child(shape);
+  root_->add_child(shape);
 }
 
 void
 Scene::remove_shape(std::shared_ptr<Shape> const& shape)
 {
-  root_.remove_child(shape);
+  root_->remove_child(shape);
 }
 
 
-Composite const&
+std::shared_ptr<Composite>
 Scene::root() const
 {
   return root_;

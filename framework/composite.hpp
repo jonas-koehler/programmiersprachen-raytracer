@@ -6,8 +6,11 @@
 
 #include <memory>
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <glm/gtx/norm.hpp>
+
+#define OCTREE_OPTIMIZATION
 
 class Composite : public Shape
 {
@@ -18,16 +21,16 @@ public:
   void add_child(std::shared_ptr<Shape> const& child);
   void remove_child(std::shared_ptr<Shape> const& child);
 
-  void translate(glm::vec3 const& t) override;
-  void scale(glm::vec3 const& s) override;
-  void rotate(float deg, glm::vec3 const& axis) override;
+  void recalculate_bbox() override;
 
   std::ostream& print(std::ostream& os) const override;
 
   void optimize();
 
 private:
-  std::vector<std::shared_ptr<Shape>> children_;
+  std::list<std::shared_ptr<Shape>> children_;
+
+  glm::vec3 center_of_mass_;
 };
 
 #endif // BUW_COMPOSITE_HPP

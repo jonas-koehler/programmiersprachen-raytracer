@@ -15,14 +15,14 @@ public:
 
   void add_shape(std::shared_ptr<Shape> const& shape);
   void remove_shape(std::shared_ptr<Shape> const& shape);
-  Composite const& root() const;
+  std::shared_ptr<Composite> root() const;
 
   void add_light(std::shared_ptr<Light> const& light);
   std::vector<std::shared_ptr<Light>> const& lights() const;
 
 private:
   std::shared_ptr<Camera> camera_;
-  Composite root_;
+  std::shared_ptr<Composite> root_;
   std::vector< std::shared_ptr<Light> > lights_;
 };
 

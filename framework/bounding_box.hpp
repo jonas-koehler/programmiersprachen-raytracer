@@ -12,6 +12,10 @@ struct BoundingBox {
     return d.x * d.y * d.z;
   }
 
+  glm::vec3 center() const {
+    return (pmax + pmin) * 0.5f;
+  }
+
   float size() const {
     auto d = pmax - pmin;
     return glm::dot(d, d);

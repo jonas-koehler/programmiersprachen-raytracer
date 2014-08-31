@@ -49,6 +49,7 @@ private:
     UNKNOWN_SHAPE_NAME,
     UNKNOWN_MATERIAL_NAME,
     UNKNOWN_CAMERA_NAME,
+    UNKNOWN_LIGHT_NAME,
 
     NO_TRANSFORM,
     NO_TRANSLATION,
@@ -60,7 +61,8 @@ private:
     UNKNOWN,
     DEFINITION,
     TRANSFORMATION,
-    RENDER
+    RENDER,
+    COMMENT
   };
 
   enum class ObjectType {
@@ -76,6 +78,7 @@ private:
     SPHERE,
     BOX,
     TRIANGLE,
+    TRIANGLE_WITH_NORMAL,
     CYLINDER,
     CONE,
     COMPOSITE
@@ -116,6 +119,7 @@ private:
   std::shared_ptr<Shape> get_shape(std::string const& name);
   std::shared_ptr<Material> get_material(std::string const& name);
   std::shared_ptr<Camera> get_camera(std::string const& name);
+  std::shared_ptr<Light> get_light(std::string const& name);
 
   template <typename T>
   void request_translation(std::shared_ptr<T> const& target);
@@ -129,9 +133,12 @@ private:
   void define_sphere();
   void define_box();
   void define_triangle();
+  void define_triangle_with_normal();
   void define_cylinder();
   void define_cone();
   void define_composite();
+
+  void create_scene_graph();
 
   void define_shape();
   void define_light();
@@ -154,6 +161,8 @@ private:
   std::map< std::string, std::shared_ptr<Light> > lights_;
   std::map< std::string, std::shared_ptr<Shape> > shapes_;
   std::map< std::string, std::shared_ptr<Material> > materials_;
+
+  std::stack< std::shared_ptr<Shape> > unprocessed_shapes_;
 
   std::stack<RenderInstruction> render_instructions_;
 

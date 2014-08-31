@@ -6,7 +6,8 @@ Camera::Camera()
  , world_transform_inv_()
 {}
 
-Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, float fovx_deg)
+Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir,
+  glm::vec3 const& up, float fovx_deg)
  : focal_length_(1.0f / (2.0f * std::tan(fovx_deg / 360.0f * M_PI)))
  , world_transform_()
  , world_transform_inv_()
@@ -17,7 +18,7 @@ Camera::Camera(glm::vec3 const& eye, glm::vec3 const& dir, glm::vec3 const& up, 
 
   world_transform_[0] = glm::vec4(u, 0.0f);
   world_transform_[1] = glm::vec4(v, 0.0f);
-  world_transform_[2] = glm::vec4(-n, 0.0f);
+  world_transform_[2] = glm::vec4(n, 0.0f);
   world_transform_[3] = glm::vec4(eye, 1.0f);
   world_transform_inv_ = glm::inverse(world_transform_);
 }

@@ -10,11 +10,11 @@
 
 #include "renderer.hpp"
 
-Renderer::Renderer(unsigned char options)
-: width_(0)
-, height_(0)
-, colorbuffer_()
-, sample_num_()
+Renderer::Renderer(unsigned width, unsigned height, unsigned char options)
+: width_(width)
+, height_(height)
+, colorbuffer_(width_ * height_, Color(0.0, 0.0, 0.0))
+, sample_num_(width_ * height_, 0)
 , samples_per_pixels_sqrt_(1)
 , total_threads_(1)
 , ppm_()
@@ -42,6 +42,13 @@ Renderer::Renderer(unsigned char options)
   else if(options & Option::RandomSampling) {
     sampler_type_ = Renderer::SamplerType::RandomSampling;
   }
+
+  ppm_ = std::make_shared<PpmWriter>(width_, height_);
+}
+
+glm::ivec2 Renderer::resolution() const
+{
+  return glm::ivec2(width_, height_);
 }
 
 int
@@ -70,7 +77,7 @@ Renderer::render(RenderInstruction const& ri)
 void
 Renderer::init(RenderInstruction const& ri)
 {
-  if (width_ != ri.res_x || height_ != ri.res_y) {
+  if (width_ != ri.res_x || height_ != ri.res_y || render_callbacks_.empty()) {
     width_ = ri.res_x;
     height_ = ri.res_y;
     ppm_ = std::make_shared<PpmWriter>(width_, height_);
@@ -135,14 +142,14 @@ Renderer::write(Pixel const& p)
 Intersection
 Renderer::trace(Ray const& ray) const
 {
-  auto isec = scene_->root().intersect(ray);
+  auto isec = scene_->root()->intersect(ray);
 
   // avoid too short ray intersections
   if (isec.t < RAY_EPSILON) {
     auto d = ray.d;
     auto o = ray.o + RAY_EPSILON * d;
     Ray new_ray(o, d, ray.depth);
-    isec = scene_->root().intersect(new_ray);
+    isec = scene_->root()->intersect(new_ray);
   }
   return isec;
 }
@@ -152,17 +159,17 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
 {
   if (isec.hit) {
 
-    Color result(0.0f, 0.0f, 0.0f);
+    Color total_result(0.0f, 0.0f, 0.0f);
 
     auto p = ray.point_at(isec.t);
     auto lights = scene_->lights();
     auto material = isec.m;
     auto eye_dir = -ray.d;
-    auto normal = isec.n;//glm::faceforward(isec.n, ray.d, isec.n);
+    auto normal = isec.n; //glm::faceforward(isec.n, ray.d, isec.n);
 
-    auto inside_material = glm::dot(isec.n, ray.d) > 0;
+    auto inside_material = glm::dot(isec.n, ray.d) >= 0;
     if (inside_material) {
-      normal *= -1;
+      normal = -isec.n;
     }
 
     for (auto const& light: lights) {
@@ -171,6 +178,7 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
       Ray shadow_ray(p + RAY_EPSILON * light_dir, light_dir, ray.depth);
       auto shadow_color = shadow(shadow_ray);
 
+      Color result;
       if (!shadow_color.is_black()) {
 
         // diffuse light
@@ -186,10 +194,10 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
         result += cos_beta_m * (light->ld() * material->ks);
       }
 
-      result = shadow_color * result;
+      total_result += shadow_color * result * (1.0f / lights.size());
 
       // ambient light
-      result += light->la() * material->ka;
+      total_result += light->la() * material->ka;
     }
 
     if (ray.depth > 0) {
@@ -203,7 +211,7 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
 
         Ray reflected_ray(o, d, ray.depth-1);
         reflected_color =  material->ks * shade(reflected_ray, trace(reflected_ray));
-        result += reflected_color;
+        total_result += reflected_color;
       }
 
       // refraction
@@ -220,16 +228,16 @@ Renderer::shade(Ray const& ray, Intersection const& isec) const
 
         // inner reflection
         if (d.x == 0 && d.y == 0 && d.z == 0) {
-          result += reflected_color;
+          total_result += reflected_color;
         } else {
           Ray refracted_ray(o, d, ray.depth-1);
-          result = (1.0f - material->transparency) * result;
-          result += material->transparency * shade(refracted_ray, trace(refracted_ray));
+          total_result = (1.0f - material->transparency) * total_result;
+          total_result += material->transparency * shade(refracted_ray, trace(refracted_ray));
         }
       }
     }
 
-    return result;
+    return total_result;
 
   // background color
   } else {
@@ -247,9 +255,9 @@ Renderer::shadow(Ray & ray) const
     if (material->transparency > 0) {
       ray.o = ray.point_at(isec.t) + RAY_EPSILON * ray.d;
 
-      auto normal = glm::faceforward(isec.n, ray.d, isec.n);
-      auto cos_phi = glm::dot(normal, ray.d);
-      cos_phi = cos_phi >= 0.0f ? cos_phi : 0.0f;
+      //auto normal = glm::faceforward(isec.n, ray.d, isec.n);
+      auto cos_phi = glm::dot(isec.n, ray.d);
+      cos_phi = cos_phi >= 0.0f ? cos_phi : -cos_phi; //0.0f;
 
       auto result = Color(1) - material->kd;;
       result *= material->transparency;

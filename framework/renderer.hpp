@@ -64,9 +64,11 @@ public:
     MultiThreading   =   0x40,
   };
 
-  Renderer(unsigned char options);
+  Renderer(unsigned width, unsigned height, unsigned char options);
 
   int render(RenderInstruction const& ri);
+
+  glm::ivec2 resolution() const;
 
   void write(Pixel const& p);
 

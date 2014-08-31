@@ -20,6 +20,18 @@ Light::translate(glm::vec3 const& t)
   p_ = glm::vec3(t_ * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
+
+void
+Light::rotate(float rad, glm::vec3 const& axis)
+{
+  auto m = glm::rotate(glm::mat4(), rad, axis);
+  auto m_inv_ = glm::rotate(glm::mat4(), -rad, axis);
+  t_ = m * t_;
+  t_inv_ = t_inv_ * m_inv_;
+  p_ = glm::vec3(t_ * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+}
+
+
 glm::vec3 const&
 Light::position() const
 {

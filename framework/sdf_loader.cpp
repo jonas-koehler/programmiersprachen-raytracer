@@ -15,6 +15,11 @@ SdfLoader::error_messages {
   { SdfLoader::ErrorType::UNKNOWN_TRANSFORM,   "unknown transform type" },
 
   { SdfLoader::ErrorType::UNKNOWN_OBJECT_NAME, "no object with this name" },
+  { SdfLoader::ErrorType::UNKNOWN_SHAPE_NAME, "no shape with this name" },
+  { SdfLoader::ErrorType::UNKNOWN_MATERIAL_NAME, "no material with this name" },
+  { SdfLoader::ErrorType::NAME_ALREADY_TAKEN, "name already taken"},
+  { SdfLoader::ErrorType::UNKNOWN_CAMERA_NAME, "no camera with this name" },
+  { SdfLoader::ErrorType::UNKNOWN_LIGHT_NAME, "no lights with this name" },
 
   { SdfLoader::ErrorType::NO_TRANSFORM,        "object can not be transformed" },
   { SdfLoader::ErrorType::NO_TRANSLATION,      "object can not be translated" },
@@ -26,7 +31,8 @@ const std::map<std::string, SdfLoader::CommandType>
 SdfLoader::command_dict {
   {"define",    SdfLoader::CommandType::DEFINITION},
   {"transform", SdfLoader::CommandType::TRANSFORMATION},
-  {"render",    SdfLoader::CommandType::RENDER}
+  {"render",    SdfLoader::CommandType::RENDER},
+  {"#",         SdfLoader::CommandType::COMMENT}
 };
 
 const std::map<std::string, SdfLoader::ObjectType>
@@ -42,6 +48,7 @@ SdfLoader::shape_dict {
   {"sphere",    SdfLoader::ShapeType::SPHERE},
   {"box",       SdfLoader::ShapeType::BOX},
   {"triangle",  SdfLoader::ShapeType::TRIANGLE},
+  {"triangle_n", SdfLoader::ShapeType::TRIANGLE_WITH_NORMAL},
   {"cylinder",  SdfLoader::ShapeType::CYLINDER},
   {"cone",      SdfLoader::ShapeType::CONE},
   {"composite",      SdfLoader::ShapeType::COMPOSITE}
@@ -69,6 +76,7 @@ SdfLoader::SdfLoader(std::string const& filename)
 , ifs_()
 , current_line_()
 , render_instructions_()
+, unprocessed_shapes_()
 {
   scene_ = std::make_shared<Scene>();
   ifs_.open (filename_, std::ifstream::in);
@@ -232,7 +240,8 @@ SdfLoader::register_shape(std::string const& name,
 {
   register_object(name, SdfLoader::ObjectType::SHAPE);
   shapes_[name] = shape;
-  scene_->add_shape(shape);
+  shape->parent(scene_->root());
+  unprocessed_shapes_.push(shape);
 }
 
 void
@@ -255,7 +264,7 @@ void
 SdfLoader::register_light(std::string const& name,
   std::shared_ptr<Light> light)
 {
-  register_object(name, SdfLoader::ObjectType::CAMERA);
+  register_object(name, SdfLoader::ObjectType::LIGHT);
   lights_[name] = light;
   scene_->add_light(light);
 }
@@ -309,6 +318,17 @@ SdfLoader::get_camera(std::string const& name)
   return (*it).second;
 }
 
+std::shared_ptr<Light>
+SdfLoader::get_light(std::string const& name)
+{
+  auto it = lights_.find(name);
+  if (it == lights_.end()) {
+    print_error(SdfLoader::ErrorType::UNKNOWN_LIGHT_NAME);
+    return std::shared_ptr<Light>();
+  }
+  return (*it).second;
+}
+
 
 
 
@@ -324,8 +344,8 @@ template <typename T>
 void
 SdfLoader::request_rotation(std::shared_ptr<T> const& target)
 {
-  auto rad = read_float();
-  auto deg = rad * 180 / M_PI;
+  auto deg = read_float();
+  auto rad = deg / 180 * M_PI;
   auto axis = read_vector();
   target->rotate(rad, axis);
 }
@@ -385,6 +405,23 @@ SdfLoader::define_triangle()
 
   register_shape(name, triangle);
 }
+int i= 0;
+void
+SdfLoader::define_triangle_with_normal()
+{
+  auto name = read_string();
+  std::array<glm::vec3, 3> v {
+    read_vector(), read_vector(), read_vector()
+  };
+  std::array<glm::vec3, 3> n {
+    read_vector(), read_vector(), read_vector()
+  };
+
+  auto material = get_material(read_string());
+
+  auto triangle = std::make_shared<Triangle>(material, v, n);
+  register_shape(name, triangle);
+}
 
 void
 SdfLoader::define_cylinder()
@@ -424,16 +461,34 @@ SdfLoader::define_composite()
   auto name = read_string();
   auto composite = std::make_shared<Composite>();
 
+  std::cout << "filling composite '" << name << "'...";
   while (!current_line_.eof()) {
     auto child_name = read_string();
     auto child = get_shape(child_name);
     composite->add_child(child);
-    scene_->remove_shape(child);
+    child->parent(composite);
   }
+  std::cout << "done" << std::endl;
 
+  std::cout << "packing composite '" << name << "'...";
   composite->optimize();
+  std::cout << "done" << std::endl;
 
   register_shape(name, composite);
+}
+
+void
+SdfLoader::create_scene_graph()
+{
+  while (!unprocessed_shapes_.empty()) {
+    auto shape = unprocessed_shapes_.top();
+    unprocessed_shapes_.pop();
+    if (auto p = shape->parent().lock()) {
+      if (p == scene_->root()) {
+        scene_->add_shape(shape);
+      }
+    }
+  }
 }
 
 void
@@ -449,6 +504,9 @@ SdfLoader::define_shape()
     break;
     case SdfLoader::ShapeType::TRIANGLE:
     define_triangle();
+    break;
+    case SdfLoader::ShapeType::TRIANGLE_WITH_NORMAL:
+    define_triangle_with_normal();
     break;
     case SdfLoader::ShapeType::CYLINDER:
     define_cylinder();
@@ -497,10 +555,18 @@ void
 SdfLoader::define_camera()
 {
   auto name = read_string();
-
-  auto camera = std::make_shared<Camera>();
-
+  std::shared_ptr<Camera> camera;
+  if (current_line_.eof()) {
+    camera = std::make_shared<Camera>();
+  } else {
+    auto fov_x = read_float();
+    auto eye = read_vector();
+    auto dir = read_vector();
+    auto up = read_vector();
+    camera = std::make_shared<Camera>(eye, dir, up, fov_x);
+  }
   register_camera(name, camera);
+
 }
 
 void
@@ -532,26 +598,22 @@ SdfLoader::request_transform()
   auto object_type = get_registered_object(target_name);
   auto transform_type = read_transform_type();
 
-  if (object_type == SdfLoader::ObjectType::MATERIAL) {
-    print_error(SdfLoader::ErrorType::NO_TRANSFORM);
-  }
-
   switch (transform_type) {
 
     case SdfLoader::TransformationType::TRANSLATE: {
       switch (object_type) {
         case SdfLoader::ObjectType::SHAPE: {
-          auto target = shapes_.at(target_name);
+          auto target = get_shape(target_name);
           request_translation<Shape>(target);
           break;
         }
         case SdfLoader::ObjectType::CAMERA: {
-          auto target = cameras_.at(target_name);
+          auto target = get_camera(target_name);
           request_translation<Camera>(target);
           break;
         }
         case SdfLoader::ObjectType::LIGHT: {
-          auto target = lights_.at(target_name);
+          auto target = get_light(target_name);
           request_translation<Light>(target);
           break;
         }
@@ -565,13 +627,18 @@ SdfLoader::request_transform()
     case SdfLoader::TransformationType::ROTATE: {
       switch (object_type) {
         case SdfLoader::ObjectType::SHAPE: {
-          auto target = shapes_.at(target_name);
+          auto target = get_shape(target_name);
           request_rotation<Shape>(target);
           break;
         }
         case SdfLoader::ObjectType::CAMERA: {
-          auto target = cameras_.at(target_name);
+          auto target = get_camera(target_name);
           request_rotation<Camera>(target);
+          break;
+        }
+        case SdfLoader::ObjectType::LIGHT: {
+          auto target = get_light(target_name);
+          request_rotation<Light>(target);
           break;
         }
         default : {
@@ -585,7 +652,7 @@ SdfLoader::request_transform()
     case SdfLoader::TransformationType::SCALE: {
       switch (object_type) {
         case SdfLoader::ObjectType::SHAPE: {
-          auto target = shapes_.at(target_name);
+          auto target = get_shape(target_name);
           request_scale<Shape>(target);
           break;
         }
@@ -611,6 +678,8 @@ SdfLoader::request_render_instruction()
   auto res_y = read_unsigned();
 
   scene_->camera(get_camera(cam_name));
+
+  create_scene_graph();
 
   render_instructions_.push(RenderInstruction(
     scene_,
@@ -650,7 +719,7 @@ SdfLoader::print_error(int err_pos, SdfLoader::ErrorType const& error)
 {
   std::string error_msg = error_messages.at(error);
 
-  std::cerr << "ERROR: '"<< error_msg << "'' at:" << std::endl;
+  std::cerr << "ERROR: '"<< error_msg << "' at:" << std::endl;
   std::cerr << current_line_.str() << std::endl;
   for (int i=0; i<err_pos; ++i) {
     std::cerr << " ";

@@ -72,7 +72,7 @@ public:
 private:
   GLFWwindow* m_window;
   glm::ivec2 m_size;
-  std::string const m_title;
+  std::string m_title;
   glm::vec2 m_mousePosition;
 
   int m_mouseButtonFlags;
